@@ -16,7 +16,6 @@ import {
   ShieldCheck,
   FileSpreadsheet,
   LogOut,
-  UserCheck,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -26,13 +25,11 @@ interface SidebarProps {
     role: string;
     department: string;
   };
-  onOpenAuth?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   complianceCount = 17,
   user = { name: "Priya Mehta", role: "Ops lead", department: "Legal" },
-  onOpenAuth,
 }) => {
   const pathname = usePathname();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -127,26 +124,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
 
         {showUserMenu && (
-          <div className="absolute bottom-14 left-0 right-0 bg-white rounded-xl shadow-lg border border-slate-200 p-2 space-y-1 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <div className="absolute bottom-14 left-0 right-0 bg-white rounded-xl shadow-lg border border-slate-200 p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-150">
             <button
-              onClick={() => {
+              onClick={async () => {
                 setShowUserMenu(false);
-                onOpenAuth?.();
+                try {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                } catch (e) {
+                  console.error(e);
+                }
+                window.location.href = "/login";
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-lg text-left"
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg text-left transition-colors"
             >
-              <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
-              Switch User / Register
-            </button>
-            <button
-              onClick={() => {
-                setShowUserMenu(false);
-                window.location.reload();
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg text-left"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              Sign Out
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out</span>
             </button>
           </div>
         )}

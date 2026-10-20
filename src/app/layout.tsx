@@ -1,31 +1,35 @@
 /**
  * Root Application Layout for CodeForge Runner.
- * Assembles persistent sidebar navigation, top-level layout grid,
- * interactive authentication modal context, and dynamic session states.
+ * Manages global shell framing: renders full-page login for unauthenticated users,
+ * and persistent sidebar navigation with active session context for dashboard routes.
  */
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
-import { AuthModal } from "@/components/AuthModal";
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const isLoginPage = pathname === "/login";
+
   const [currentUser, setCurrentUser] = useState({
     name: "Priya Mehta",
     role: "Ops lead",
     department: "Legal",
   });
   const [complianceCount, setComplianceCount] = useState(17);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
 
-  // Fetch initial profile and compliance counters
+  // Validate active session and fetch counters
   useEffect(() => {
-    async function loadInitialData() {
+    async function verifySession() {
       try {
         const userRes = await fetch("/api/auth/me");
         if (userRes.ok) {
@@ -33,21 +37,52 @@ export default function RootLayout({
           if (userData.user) {
             setCurrentUser(userData.user);
           }
+          if (isLoginPage) {
+            router.push("/");
+          }
+        } else {
+          if (!isLoginPage) {
+            router.push("/login");
+          }
         }
 
-        const compRes = await fetch("/api/compliance");
-        if (compRes.ok) {
-          const compData = await compRes.json();
-          if (compData.counts?.all) {
-            setComplianceCount(compData.counts.all);
+        if (!isLoginPage) {
+          const compRes = await fetch("/api/compliance");
+          if (compRes.ok) {
+            const compData = await compRes.json();
+            if (compData.counts?.all !== undefined) {
+              setComplianceCount(compData.counts.all);
+            }
           }
         }
       } catch (err) {
-        console.error("Initialization error:", err);
+        console.error("Session verification error:", err);
+      } finally {
+        setIsVerifying(false);
       }
     }
-    loadInitialData();
-  }, []);
+
+    verifySession();
+  }, [pathname, isLoginPage, router]);
+
+  // Dedicated full-page layout for login/registration
+  if (isLoginPage) {
+    return (
+      <html lang="en">
+        <head>
+          <title>Sign In · CodeForge Runner</title>
+          <meta
+            name="description"
+            content="Sign in to CodeForge Runner autonomous document intelligence platform."
+          />
+          <link rel="icon" href="/favicon.ico" />
+        </head>
+        <body className="min-h-screen bg-[#f8fafc] text-slate-800 antialiased">
+          {children}
+        </body>
+      </html>
+    );
+  }
 
   return (
     <html lang="en">
@@ -63,20 +98,11 @@ export default function RootLayout({
         <Sidebar
           complianceCount={complianceCount}
           user={currentUser}
-          onOpenAuth={() => setIsAuthOpen(true)}
         />
 
         <main className="flex-1 min-w-0 px-6 py-6 lg:px-8 max-w-7xl mx-auto overflow-y-auto">
           {children}
         </main>
-
-        <AuthModal
-          isOpen={isAuthOpen}
-          onClose={() => setIsAuthOpen(false)}
-          onAuthSuccess={(user) => {
-            setCurrentUser(user);
-          }}
-        />
       </body>
     </html>
   );

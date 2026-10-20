@@ -43,8 +43,7 @@ c:\Users\Adi\Desktop\coforge
     │   ├── PipelineVisualizer.tsx      # 4-stage agent telemetry status cards
     │   ├── DocumentsPerHourChart.tsx   # Interactive 24h / 7d / 30d throughput bar chart
     │   ├── DocumentViewer.tsx          # Side-by-side contract inspector & field overlays
-    │   ├── DecisionTrail.tsx           # 5-step agent provenance audit timeline & override
-    │   └── AuthModal.tsx               # Modal for login, registration & persona switching
+    │   └── DecisionTrail.tsx           # 5-step agent provenance audit timeline & override
     └── app/
         ├── layout.tsx                  # Root layout with Sidebar & persistent Auth context
         ├── globals.css                 # Global CSS styles & custom scrollbars
