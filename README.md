@@ -12,62 +12,66 @@ CodeForge Runner is a production-grade AI document processing, contract intellig
 
 ## 📁 Highly Organized Next.js File Structure
 
-Every file in the codebase contains a **3-4 line description header** at the very top explaining what is being done in that file.
+Every file in the codebase begins with a **3-4 line description header** at the very top detailing its operational purpose and architecture.
 
 ```
-c:\Users\Adi\Desktop\coforge
-├── .env.local                          # MongoDB Atlas direct replicaSet URI & JWT secrets
-├── next.config.mjs                     # Next.js server external packages configuration
-├── package.json                        # Dependencies, engines, and operational scripts
-├── postcss.config.mjs                  # PostCSS Tailwind and Autoprefixer rules
-├── tailwind.config.ts                  # Brand color tokens (purple/indigo/slate) & badges
-├── tsconfig.json                       # TypeScript compiler options & alias paths (@/*)
-├── README.md                           # Architecture, database setup, and user guide
+codeforge-runner/
+├── .env.example                          # Environment variable template for local & Vercel deployment
+├── .env.local                            # Local MongoDB Atlas direct replicaSet URI & JWT secrets
+├── next.config.mjs                       # Next.js configuration (external server packages & remote images)
+├── package.json                          # Dependencies, scripts, and runtime engines
+├── postcss.config.mjs                    # PostCSS Tailwind and Autoprefixer rules
+├── tailwind.config.ts                    # Design system color tokens, utilities, and badges
+├── tsconfig.json                         # TypeScript compiler configuration and path aliases (@/*)
+├── vercel.json                           # Vercel deployment framework & serverless specification
+├── README.md                             # Architecture, database setup, and operational guide
 ├── scripts/
-│   └── seed.mjs                        # Standalone MongoDB database seed script
+│   └── seed.mjs                          # Standalone MongoDB database seed script
 └── src/
+    ├── middleware.ts                     # Edge routing middleware gating unauthenticated sessions
     ├── types/
-    │   └── index.ts                    # Shared TypeScript interfaces (IUser, IDocument, etc.)
+    │   └── index.ts                      # Shared TypeScript models (IUser, IDocument, IClause, etc.)
     ├── lib/
-    │   ├── db.ts                       # Resilient MongoDB connector with embedded fallback
-    │   ├── auth.ts                     # bcrypt password hashing & JWT token verification
-    │   └── sampleData.ts               # Authentic seed dataset matching design mockups
+    │   ├── db.ts                         # Resilient MongoDB connector with pooling & platform guards
+    │   ├── auth.ts                       # bcrypt password hashing & JWT token verification
+    │   └── sampleData.ts                 # Authentic seed dataset matching design mockups
     ├── models/
-    │   ├── User.ts                     # Mongoose model for users & hashed credentials
-    │   ├── Document.ts                 # Mongoose model for contracts, fields & clauses
-    │   ├── ComplianceIssue.ts          # Mongoose model for audit flags & decision trails
-    │   └── PipelineStat.ts             # Mongoose model for live pipeline telemetry
+    │   ├── User.ts                       # Mongoose model for user accounts & hashed credentials
+    │   ├── Document.ts                   # Mongoose model for contracts, extracted fields & clauses
+    │   ├── ComplianceIssue.ts            # Mongoose model for audit flags & decision trails
+    │   └── PipelineStat.ts               # Mongoose model for live pipeline telemetry
     ├── components/
-    │   ├── Sidebar.tsx                 # Left navigation bar with user persona pill & badges
-    │   ├── Topbar.tsx                  # Header with natural query bar & upload CTA
-    │   ├── PipelineVisualizer.tsx      # 4-stage agent telemetry status cards
-    │   ├── DocumentsPerHourChart.tsx   # Interactive 24h / 7d / 30d throughput bar chart
-    │   ├── DocumentViewer.tsx          # Side-by-side contract inspector & field overlays
-    │   └── DecisionTrail.tsx           # 5-step agent provenance audit timeline & override
+    │   ├── Sidebar.tsx                   # Collapsible left navigation bar with active route indicators
+    │   ├── Topbar.tsx                    # Header with query bar, breadcrumbs, and upload CTA
+    │   ├── PipelineVisualizer.tsx        # 4-stage agent telemetry status cards
+    │   ├── DocumentsPerHourChart.tsx     # Interactive 24h / 7d / 30d throughput bar chart
+    │   ├── DocumentViewer.tsx            # Multi-format document inspector (PDF, TIFF, Invoices)
+    │   └── DecisionTrail.tsx             # 5-step agent provenance audit timeline & override modal
     └── app/
-        ├── layout.tsx                  # Root layout with Sidebar & persistent Auth context
-        ├── globals.css                 # Global CSS styles & custom scrollbars
-        ├── page.tsx                    # Screen 1: Executive Operations Dashboard
-        ├── upload/page.tsx             # Screen 2: Document Ingestion & Live Pipeline
-        ├── search/page.tsx             # Screen 3: Semantic Natural Language Search
-        ├── documents/[id]/page.tsx     # Screen 4: Deep Document Viewer & Inspector
-        ├── compliance/page.tsx         # Screen 5: Compliance & Audit Decision Trail
-        ├── login/page.tsx              # Full-page login & registration
-        └── api/                        # Dedicated Backend REST API Routes
+        ├── layout.tsx                    # Root layout with Sidebar & persistent Auth context
+        ├── globals.css                   # Global styles, custom scrollbars, and typography
+        ├── page.tsx                      # Screen 1: Executive Operations Dashboard
+        ├── upload/page.tsx               # Screen 2: Document Ingestion & Live Pipeline
+        ├── search/page.tsx               # Screen 3: Semantic Natural Language Search
+        ├── documents/[id]/page.tsx       # Screen 4: Deep Document Viewer & Inspector
+        ├── compliance/page.tsx           # Screen 5: Compliance & Audit Decision Trail
+        ├── login/page.tsx                # Split-screen authenticated portal (Login & Register)
+        └── api/                          # Serverless REST API Route Handlers
             ├── auth/
-            │   ├── login/route.ts      # Verifies bcrypt hashes and issues JWT
-            │   ├── register/route.ts   # Registers new account and hashes password
-            │   └── me/route.ts         # Resolves active session / default demo persona
+            │   ├── login/route.ts        # Verifies bcrypt hash and sets HTTP-only JWT cookie
+            │   ├── register/route.ts     # Creates user account and issues JWT session
+            │   ├── logout/route.ts       # Clears session cookies on sign out
+            │   └── me/route.ts           # Validates JWT token and resolves active user session
             ├── documents/
-            │   ├── route.ts            # GET filtered documents / POST new uploads
-            │   └── [id]/route.ts       # GET document details / PATCH status updates
+            │   ├── route.ts              # GET filtered documents / POST new uploads
+            │   └── [id]/route.ts         # GET document details by ID or slug / PATCH updates
             ├── pipeline/
-            │   └── status/route.ts     # Real-time agent workloads & logs
+            │   └── status/route.ts       # Real-time agent workloads & operational throughput
             ├── compliance/
-            │   ├── route.ts            # Flagged issues & risk severity counts
+            │   ├── route.ts              # Flagged issues & risk severity counts
             │   └── [id]/override/route.ts # Human review decision override
-            ├── search/route.ts         # Query decomposition & AI answer synthesis
-            └── seed/route.ts           # Atomic MongoDB seeding endpoint
+            ├── search/route.ts           # Query decomposition & AI answer synthesis
+            └── seed/route.ts             # Atomic MongoDB seeding and sync endpoint
 ```
 
 ---
@@ -79,13 +83,14 @@ The application connects to MongoDB Atlas using the **direct standard replica se
 ```ini
 MONGODB_URI=mongodb://<USERNAME>:<PASSWORD>@<HOST_1>:27017,<HOST_2>:27017,<HOST_3>:27017/<DATABASE_NAME>?ssl=true&replicaSet=<REPLICA_SET_NAME>&authSource=admin&retryWrites=true&w=majority
 ```
-* **Why this format?** Unlike `mongodb+srv://`, which delegates DNS SRV queries to local ISP/router DNS (frequently causing `querySrv ECONNREFUSED` on Windows machines), the direct standard replica set URI specifies the exact shard nodes directly. This performs standard DNS lookups that work seamlessly across all networks without DNS SRV failures.
+* **Why this format?** Unlike `mongodb+srv://`, which delegates DNS SRV queries to local ISP/router DNS (frequently causing `querySrv ECONNREFUSED` on Windows machines), the direct standard replica set URI specifies the exact shard nodes directly. This performs standard DNS lookups that work reliably across all operating systems and cloud environments without DNS SRV failures.
 
-### 2. Automatic Embedded In-Memory Fallback
-If an external MongoDB instance is unreachable or offline, [`src/lib/db.ts`](file:///c:/Users/Adi/Desktop/coforge/src/lib/db.ts) automatically falls back to an embedded in-memory MongoDB engine (`mongodb-memory-server`) to ensure zero-downtime portability.
+### 2. Automatic Serverless & Platform Guards
+* In [`src/lib/db.ts`](file:///c:/Users/Adi/Desktop/coforge/src/lib/db.ts), DNS server configuration is scoped specifically to Windows to prevent overriding native DNS resolution on Linux cloud hosts (such as Vercel).
+* In local development, an optional embedded in-memory database (`mongodb-memory-server`) provides offline resilience, while production environments enforce direct, secure Atlas cluster connections.
 
 ### 3. Atomic Upserts & Race Condition Prevention
-* **Thread-Safe Bootstrapping**: Default personas and sample datasets are initialized using atomic `findOneAndUpdate` with `{ upsert: true, $setOnInsert: ... }`.
+* User accounts and sample datasets are initialized using atomic `findOneAndUpdate` with `{ upsert: true, $setOnInsert: ... }`.
 * Concurrent parallel requests (e.g., initial page boot executing `/api/auth/me` and `/api/documents` simultaneously) cannot trigger `E11000 duplicate key` errors on unique indexes.
 * Schema validation guards in [`src/models/ComplianceIssue.ts`](file:///c:/Users/Adi/Desktop/coforge/src/models/ComplianceIssue.ts) guarantee required relation paths like `documentId` are always populated.
 
@@ -103,8 +108,9 @@ If an external MongoDB instance is unreachable or offline, [`src/lib/db.ts`](fil
 ### Screen 2: Upload Documents & Live Pipeline (`/upload`)
 * **Multi-Format Ingestion**: Drag-and-drop file uploader supporting PDF, TIFF, JPG, PNG, and DOCX files.
 * **Workspace & Policy Routing**: Select workspace (*Legal · Contracts*), document type (*Auto-detect* / manual), compliance policy (*Commercial contracts v4*), and confidence threshold routing.
-* **Batch Monitor & Live Activity**: Batch progress bar (58%) and live agent activity stream with millisecond timestamps (*Extract found 23 fields...*, *Classify labelled Invoice...*, *OCR deskewed 3 pages...*).
+* **Batch Monitor & Live Activity**: Batch progress bar and live agent activity stream with millisecond timestamps (*Extract found 23 fields...*, *Classify labelled Invoice...*, *OCR deskewed 3 pages...*).
 * **Multi-Stage Processing Queue**: Real-time progress bars showing files advancing through `OCR` $\rightarrow$ `Classify` $\rightarrow$ `Extract` $\rightarrow$ `Comply`.
+* **Dynamic Document Routing**: Clicking any file in the processing table navigates directly to that document's dedicated viewer.
 
 ### Screen 3: Semantic Natural Language Search (`/search`)
 * **Natural Language Query Decomposition**: Parses queries like *"Vendor contracts that auto-renew before June 2027 without a termination notice period"* into structured filter tags (`Type: Vendor contract`, `Renewal: Automatic`, `Renews before 30 Jun 2027`, `Notice period: none`).
@@ -113,39 +119,32 @@ If an external MongoDB instance is unreachable or offline, [`src/lib/db.ts`](fil
 * **Results Cards**: Displays highlighted matching clause snippets, renewal dates, contract value, counterparty, and match confidence %.
 
 ### Screen 4: Deep Document Review & Inspector (`/documents/[id]`)
-* **Split-Screen Contract Viewer**: Renders Page 12 of 42 with authentic contract typography.
-* **Interactive Highlights**: Extracted fields (purple borders) and risk clauses (rose borders).
+* **Adaptive Multi-Format Canvas**:
+  * **Master Agreements (PDF)**: Renders legal contract typography with sections for fees, renewal, liability caps, and governing jurisdiction.
+  * **Scanned Files (TIFF)**: Displays raw optical scan telemetry (300 DPI, deskew angles) and deskewed text with OCR confidence ratings.
+  * **Commercial Invoices**: Renders structured billing blocks, line-item itemizations, total sums, and payment terms discrepancy alerts.
+* **Interactive Highlights**: Extracted fields (indigo borders) and risk clauses (rose borders).
 * **Bidirectional Synchronization**: Clicking any extracted field or clause in the inspector highlights the text on the document page, and vice versa.
-* **Real Approvals**: **"Approve extraction"** and **"Send to legal review"** buttons persist status updates in MongoDB.
+* **Status Controls**: **"Approve extraction"** and **"Send to legal review"** buttons persist status updates in MongoDB.
 
 ### Screen 5: Compliance & Audit Log (`/compliance`)
 * **Severity Dashboard Tabs**: Filter issues by *All open issues* (17), *Critical* (4), *High* (6), *Medium* (5), and *Low* (2).
 * **Chronological Decision Trail**: Full 5-step agent provenance timeline (OCR agent $\rightarrow$ Classify agent $\rightarrow$ Extract agent $\rightarrow$ Comply agent $\rightarrow$ Human review) with version tags and latencies.
 * **Decision Override Modal**: Human reviewers can provide justification notes, appending an immutable audit record to the issue.
-* **Export Audit Log**: Generates downloadable JSON/CSV audit reports.
+* **Export Audit Log**: Generates downloadable JSON audit reports.
 
 ---
 
-## 🔐 User Authentication
-
-* **Default Account**:
-  * **Name**: Priya Mehta
-  * **Role**: Ops lead · Legal
-  * **Email**: `priya.mehta@codeforge.ai`
-  * **Password**: `password123`
-* **Custom User Accounts**: Visit `/login` (Register tab) to create new accounts with encrypted passwords (via `bcryptjs`) and secure JWT session issuance.
-
----
-
-## 🚀 Running the Project
+## 🚀 Running Locally
 
 ```bash
-# 1. Start the development server
+# 1. Install dependencies
+npm install
+
+# 2. Start the development server
 npm run dev
 
-# 2. Or create and start a production build  
+# 3. Create a production build
 npm run build
 npm run start
 ```
-
-Access the application in your browser at: **http://localhost:3000**
