@@ -8,6 +8,8 @@ import { connectToDatabase } from "@/lib/db";
 import { UserModel } from "@/models/User";
 import { comparePassword, signJwtToken, hashPassword } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
@@ -84,6 +86,7 @@ export async function POST(req: Request) {
     response.cookies.set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     });

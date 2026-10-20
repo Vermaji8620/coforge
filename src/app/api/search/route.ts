@@ -7,6 +7,8 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { DocumentModel } from "@/models/Document";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const {

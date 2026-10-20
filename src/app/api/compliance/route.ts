@@ -8,6 +8,8 @@ import { connectToDatabase } from "@/lib/db";
 import { ComplianceIssueModel } from "@/models/ComplianceIssue";
 import { INITIAL_COMPLIANCE_ISSUES } from "@/lib/sampleData";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     await connectToDatabase();

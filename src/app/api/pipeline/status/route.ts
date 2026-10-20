@@ -9,6 +9,8 @@ import { PipelineStatModel } from "@/models/PipelineStat";
 import { DocumentModel } from "@/models/Document";
 import { INITIAL_LIVE_AGENT_LOGS } from "@/lib/sampleData";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     await connectToDatabase();

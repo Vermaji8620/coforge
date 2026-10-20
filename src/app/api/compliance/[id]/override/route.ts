@@ -7,6 +7,8 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { ComplianceIssueModel } from "@/models/ComplianceIssue";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(
   req: Request,
   { params }: { params: { id: string } }

@@ -17,6 +17,8 @@ import {
   INITIAL_LIVE_AGENT_LOGS,
 } from "@/lib/sampleData";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     await connectToDatabase();

@@ -8,6 +8,8 @@ import { connectToDatabase } from "@/lib/db";
 import { DocumentModel } from "@/models/Document";
 import { INITIAL_DOCUMENTS } from "@/lib/sampleData";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     await connectToDatabase();

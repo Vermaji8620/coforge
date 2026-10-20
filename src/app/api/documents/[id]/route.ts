@@ -10,6 +10,8 @@ import { INITIAL_DOCUMENTS } from "@/lib/sampleData";
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
