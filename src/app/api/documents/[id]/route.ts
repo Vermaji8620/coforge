@@ -7,6 +7,8 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import { DocumentModel } from "@/models/Document";
 
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
@@ -14,6 +16,7 @@ export async function GET(
   try {
     await connectToDatabase();
     const docId = params.id;
+    const searchTerm = escapeRegExp(docId);
 
     let doc = null;
     if (docId.match(/^[0-9a-fA-F]{24}$/)) {
@@ -21,7 +24,10 @@ export async function GET(
     }
     if (!doc) {
       doc = await DocumentModel.findOne({
-        $or: [{ _id: docId }, { title: { $regex: docId, $options: "i" } }],
+        $or: [
+          { title: { $regex: searchTerm, $options: "i" } },
+          { counterparty: { $regex: searchTerm, $options: "i" } },
+        ],
       });
     }
 
@@ -48,6 +54,7 @@ export async function PATCH(
   try {
     await connectToDatabase();
     const docId = params.id;
+    const searchTerm = escapeRegExp(docId);
     const updates = await req.json();
 
     let doc = null;
@@ -55,7 +62,7 @@ export async function PATCH(
       doc = await DocumentModel.findByIdAndUpdate(docId, updates, { new: true });
     } else {
       doc = await DocumentModel.findOneAndUpdate(
-        { title: { $regex: docId, $options: "i" } },
+        { title: { $regex: searchTerm, $options: "i" } },
         updates,
         { new: true }
       );
