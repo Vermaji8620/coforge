@@ -126,14 +126,14 @@ If an external MongoDB instance is unreachable or offline, [`src/lib/db.ts`](fil
 
 ---
 
-## 🔐 User Authentication & Personas
+## 🔐 User Authentication
 
-* **Default Demo Persona**:
+* **Default Account**:
   * **Name**: Priya Mehta
   * **Role**: Ops lead · Legal
   * **Email**: `priya.mehta@codeforge.ai`
   * **Password**: `password123`
-* **Custom User Accounts**: Use the bottom-left sidebar persona pill or visit `/login` to register new accounts with encrypted passwords (via `bcryptjs`) and secure JWT session issuance.
+* **Custom User Accounts**: Visit `/login` (Register tab) to create new accounts with encrypted passwords (via `bcryptjs`) and secure JWT session issuance.
 
 ---
 

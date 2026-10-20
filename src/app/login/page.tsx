@@ -1,7 +1,7 @@
 /**
  * Enterprise Authentication Page (/login).
  * Features split-screen branding, live agent pipeline value showcase,
- * tabbed sign-in & registration workflows, and one-click demo persona access.
+ * and tabbed sign-in & registration workflows.
  */
 "use client";
 
@@ -31,8 +31,8 @@ function LoginForm() {
   const returnTo = searchParams.get("from") || "/";
 
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState("priya.mehta@codeforge.ai");
-  const [password, setPassword] = useState("password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState("Legal Specialist");
   const [department, setDepartment] = useState("Legal Operations");
@@ -42,14 +42,6 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
-
-  // One-click quick fill for demo persona
-  const handleFillDemoPersona = () => {
-    setActiveTab("login");
-    setEmail("priya.mehta@codeforge.ai");
-    setPassword("password123");
-    setErrorMsg("");
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -256,36 +248,6 @@ function LoginForm() {
             </p>
           </div>
 
-          {/* Quick 1-Click Demo Persona Banner */}
-          <button
-            type="button"
-            onClick={handleFillDemoPersona}
-            className="w-full p-3 rounded-2xl bg-indigo-50/80 hover:bg-indigo-100/80 border border-indigo-200/80 text-left transition-all flex items-center justify-between group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
-                PM
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-indigo-950">
-                    Priya Mehta
-                  </span>
-                  <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-100 px-1.5 py-0.2 rounded">
-                    Demo Persona
-                  </span>
-                </div>
-                <p className="text-[11px] text-indigo-700/80 font-medium">
-                  Ops lead · Legal Operations
-                </p>
-              </div>
-            </div>
-
-            <span className="text-xs font-semibold text-indigo-600 group-hover:translate-x-0.5 transition-transform">
-              Fill &rarr;
-            </span>
-          </button>
-
           {/* Status Message Alerts */}
           {errorMsg && (
             <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2.5 animate-in fade-in">
@@ -381,7 +343,7 @@ function LoginForm() {
                 {activeTab === "login" && (
                   <button
                     type="button"
-                    onClick={() => alert("To reset password in demo, use password123 or fill demo persona.")}
+                    onClick={() => alert("Please contact your administrator or legal ops lead to reset your account credentials.")}
                     className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700"
                   >
                     Forgot password?
