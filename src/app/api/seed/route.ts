@@ -1,7 +1,7 @@
 /**
- * Database seeding API endpoint for CodeForge Runner.
- * Atomically initializes default persona users, enterprise contracts,
- * compliance audit flags, and pipeline operational telemetry into MongoDB.
+ * Database seeding and sync API endpoint for CodeForge Runner.
+ * Upserts default persona users, enterprise contracts, compliance audit flags,
+ * and pipeline operational telemetry into MongoDB, with optional full reset capability.
  */
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
@@ -17,9 +17,18 @@ import {
   INITIAL_LIVE_AGENT_LOGS,
 } from "@/lib/sampleData";
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
     await connectToDatabase();
+
+    const { searchParams } = new URL(req.url);
+    const reset = searchParams.get("reset") === "true";
+
+    if (reset) {
+      await DocumentModel.deleteMany({});
+      await ComplianceIssueModel.deleteMany({});
+      await PipelineStatModel.deleteMany({});
+    }
 
     // 1. Atomic Upsert for Default Persona (Race-condition safe)
     const passwordHash = await hashPassword("password123");
@@ -38,19 +47,27 @@ export async function POST() {
       if (err.code !== 11000) throw err;
     }
 
-    // 2. Seed Documents
-    const docCount = await DocumentModel.countDocuments();
-    let seededDocs = [];
-    if (docCount === 0) {
-      seededDocs = await DocumentModel.insertMany(INITIAL_DOCUMENTS);
-    } else {
-      seededDocs = await DocumentModel.find();
+    // 2. Upsert Documents to keep fields, clauses, and metadata in sync with sampleData.ts
+    const seededDocs = [];
+    for (const doc of INITIAL_DOCUMENTS) {
+      const updatedDoc = await DocumentModel.findOneAndUpdate(
+        {
+          $or: [
+            { filename: doc.filename },
+            { title: doc.title },
+          ],
+        },
+        { $set: doc },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      seededDocs.push(updatedDoc);
     }
 
     // 3. Seed Compliance Issues linked to seeded documents
     const issueCount = await ComplianceIssueModel.countDocuments();
-    if (issueCount === 0) {
-      const northwindDoc = seededDocs.find((d: any) => d.title?.includes("Northwind")) || seededDocs[0];
+    if (issueCount === 0 || reset) {
+      const northwindDoc =
+        seededDocs.find((d: any) => d.title?.includes("Northwind")) || seededDocs[0];
       const issuesWithDocIds = INITIAL_COMPLIANCE_ISSUES.map((issue) => ({
         ...issue,
         documentId: northwindDoc?._id?.toString() || "doc-1",
@@ -60,7 +77,7 @@ export async function POST() {
 
     // 4. Seed Pipeline Stats
     const statsCount = await PipelineStatModel.countDocuments();
-    if (statsCount === 0) {
+    if (statsCount === 0 || reset) {
       await PipelineStatModel.create({
         recentAgentLogs: INITIAL_LIVE_AGENT_LOGS,
       });
@@ -68,7 +85,10 @@ export async function POST() {
 
     return NextResponse.json({
       success: true,
-      message: "Database successfully seeded with realistic sample data.",
+      message: reset
+        ? "Database completely reset and re-seeded from sampleData.ts."
+        : "Database successfully synchronized and updated from sampleData.ts.",
+      documentsCount: seededDocs.length,
     });
   } catch (error: any) {
     console.error("Seeding error:", error);
@@ -76,6 +96,6 @@ export async function POST() {
   }
 }
 
-export async function GET() {
-  return POST();
+export async function GET(req: Request) {
+  return POST(req);
 }

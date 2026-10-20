@@ -5,7 +5,7 @@
  */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   UploadCloud,
   FileText,
@@ -20,6 +20,8 @@ import Link from "next/link";
 
 interface ProcessingItem {
   id: string;
+  docId?: string;
+  docSlug?: string;
   name: string;
   meta: string;
   format: "PDF" | "TIF" | "DOC";
@@ -52,6 +54,7 @@ export default function UploadPage() {
   const [items, setItems] = useState<ProcessingItem[]>([
     {
       id: "p1",
+      docSlug: "northwind",
       name: "MSA – Northwind Logistics.pdf",
       meta: "42 pages · 6.1 MB",
       format: "PDF",
@@ -64,6 +67,7 @@ export default function UploadPage() {
     },
     {
       id: "p2",
+      docSlug: "INV-20944",
       name: "INV-20944.pdf",
       meta: "2 pages · 340 KB",
       format: "PDF",
@@ -77,6 +81,7 @@ export default function UploadPage() {
     },
     {
       id: "p3",
+      docSlug: "scan_0044.tiff",
       name: "scan_0044.tiff",
       meta: "11 pages · 18.4 MB",
       format: "TIF",
@@ -90,6 +95,7 @@ export default function UploadPage() {
     },
     {
       id: "p4",
+      docSlug: "NDA - Kestrel Bio",
       name: "NDA – Kestrel Bio.docx",
       meta: "6 pages · 88 KB",
       format: "DOC",
@@ -102,6 +108,7 @@ export default function UploadPage() {
     },
     {
       id: "p5",
+      docSlug: "Lease amendment 4 - Unit 4B",
       name: "Lease amendment 4 – Unit 4B.pdf",
       meta: "9 pages · 2.2 MB",
       format: "PDF",
@@ -113,6 +120,37 @@ export default function UploadPage() {
       statusClass: "text-slate-400",
     },
   ]);
+
+  // Synchronize document IDs from MongoDB on initial mount
+  useEffect(() => {
+    async function syncDocumentIds() {
+      try {
+        const res = await fetch("/api/documents");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.documents && data.documents.length > 0) {
+            setItems((prev) =>
+              prev.map((item) => {
+                const match = data.documents.find(
+                  (d: any) =>
+                    d.filename?.toLowerCase() === item.name.toLowerCase() ||
+                    d.title?.toLowerCase() === item.name.replace(/\.[^/.]+$/, "").toLowerCase() ||
+                    (item.docSlug && (
+                      d.title?.toLowerCase().includes(item.docSlug.toLowerCase()) ||
+                      d.filename?.toLowerCase().includes(item.docSlug.toLowerCase())
+                    ))
+                );
+                return match ? { ...item, docId: match._id } : item;
+              })
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Failed to sync documents list:", err);
+      }
+    }
+    syncDocumentIds();
+  }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -134,11 +172,13 @@ export default function UploadPage() {
       });
 
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.document) {
         const newItem: ProcessingItem = {
           id: `p-${Date.now()}`,
+          docId: data.document._id,
+          docSlug: data.document._id,
           name: newFile.name,
-          meta: `18 pages · ${(newFile.size / (1024 * 1024)).toFixed(1)} MB`,
+          meta: `${data.document.pages || 18} pages · ${(newFile.size / (1024 * 1024)).toFixed(1)} MB`,
           format: newFile.name.endsWith("docx") ? "DOC" : newFile.name.endsWith("tiff") ? "TIF" : "PDF",
           ocr: "complete",
           classify: "complete",
@@ -351,7 +391,7 @@ export default function UploadPage() {
                 </div>
                 <div>
                   <Link
-                    href={`/documents/northwind`}
+                    href={`/documents/${encodeURIComponent(item.docId || item.docSlug || item.name)}`}
                     className="font-bold text-slate-800 text-xs hover:text-indigo-600 transition-colors"
                   >
                     {item.name}

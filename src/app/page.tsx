@@ -268,7 +268,7 @@ export default function DashboardPage() {
                   >
                     <td className="py-3.5 pr-4 font-semibold text-slate-800 group-hover:text-indigo-600">
                       <Link
-                        href={`/documents/northwind`}
+                        href={`/documents/${doc._id || encodeURIComponent(doc.filename || doc.title)}`}
                         className="flex items-center gap-2"
                       >
                         {doc.filename || doc.title}

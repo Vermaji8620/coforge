@@ -124,7 +124,7 @@ export const DecisionTrail: React.FC<DecisionTrailProps> = ({
       {/* Action Footer */}
       <div className="flex items-center gap-3 pt-6 mt-6 border-t border-slate-100">
         <Link
-          href={`/documents/northwind`}
+          href={`/documents/${encodeURIComponent(issue.documentId || 'northwind')}`}
           className="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold text-center shadow-sm shadow-indigo-200 transition-all active:scale-[0.98]"
         >
           Open document

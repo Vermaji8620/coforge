@@ -21,7 +21,7 @@ export default function DocumentDetailsPage({
   useEffect(() => {
     async function loadDoc() {
       try {
-        const res = await fetch(`/api/documents/${params.id}`);
+        const res = await fetch(`/api/documents/${encodeURIComponent(params.id)}`);
         if (res.ok) {
           const data = await res.json();
           if (data.document) {
@@ -35,8 +35,18 @@ export default function DocumentDetailsPage({
         setLoading(false);
       }
 
-      // Resilient fallback to default initial document
-      setDoc(INITIAL_DOCUMENTS[0] as IDocument);
+      // Resilient fallback to matching initial document
+      const decoded = decodeURIComponent(params.id || "").toLowerCase();
+      const cleanDecoded = decoded.replace(/\.[^/.]+$/, "");
+      const match = INITIAL_DOCUMENTS.find(
+        (d) =>
+          d.filename?.toLowerCase() === decoded ||
+          d.title?.toLowerCase() === decoded ||
+          d.filename?.toLowerCase().includes(cleanDecoded) ||
+          d.title?.toLowerCase().includes(cleanDecoded) ||
+          d.counterparty?.toLowerCase().includes(decoded)
+      );
+      setDoc((match || INITIAL_DOCUMENTS[0]) as IDocument);
     }
 
     loadDoc();
@@ -68,10 +78,18 @@ export default function DocumentDetailsPage({
     }
   };
 
-  if (!doc) {
+  if (loading && !doc) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="w-8 h-8 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!doc) {
+    return (
+      <div className="p-8 text-center text-slate-500 text-sm">
+        Document could not be loaded.
       </div>
     );
   }
