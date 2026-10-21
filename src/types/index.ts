@@ -86,6 +86,9 @@ export interface IComplianceIssue {
   status: "Open" | "Overridden" | "Resolved";
   decisionTrail: IDecisionTrailStep[];
   policyName: string;
+  overrideReason?: string;
+  overriddenBy?: string;
+  overriddenAt?: Date | string;
 }
 
 export interface IPipelineAgentStat {
