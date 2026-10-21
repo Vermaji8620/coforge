@@ -71,10 +71,10 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             <span>/</span>
             <span>{document.workspace || "Legal · Contracts"}</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight break-words">
             {document.title}
           </h1>
-          <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-600">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 text-xs text-slate-600">
             <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-medium border border-indigo-100">
               {document.docType} · {document.confidence}%
             </span>
@@ -101,16 +101,16 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full sm:w-auto">
           <button
             onClick={handleSendLegal}
-            className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-all shadow-xs"
+            className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-all shadow-xs text-center"
           >
             Send to legal review
           </button>
           <button
             onClick={handleApprove}
-            className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-sm shadow-indigo-200 flex items-center gap-1.5"
+            className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-sm shadow-indigo-200 flex items-center justify-center gap-1.5 text-center"
           >
             <Check className="w-4 h-4" />
             Approve extraction
@@ -123,7 +123,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         {/* Left Column: Interactive Document Page Canvas */}
         <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
           {/* Document Canvas Toolbar */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50/50 text-xs">
+          <div className="flex flex-wrap items-center justify-between px-4 sm:px-5 py-3 border-b border-slate-100 bg-slate-50/50 text-xs gap-2">
             {/* Page Navigation */}
             <div className="flex items-center gap-2">
               <button
@@ -159,16 +159,16 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           </div>
 
           {/* Actual Document Text Page Canvas */}
-          <div className="p-8 font-serif text-[13px] leading-relaxed text-slate-800 bg-[#fafafa]/50 min-h-[560px]">
+          <div className="p-3 sm:p-5 lg:p-8 font-serif text-xs sm:text-[13px] leading-[1.85] sm:leading-relaxed text-slate-800 bg-[#fafafa]/50 min-h-[500px]">
             {/* RENDER CASE 1: SCANNED TIFF DOCUMENT */}
             {isTiffScan && (
               <div className="space-y-4 font-mono text-xs">
-                <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl flex items-center justify-between text-[11px] text-amber-800">
+                <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-amber-800">
                   <div className="flex items-center gap-2 font-sans font-semibold">
-                    <Scan className="w-4 h-4 text-amber-600" />
+                    <Scan className="w-4 h-4 text-amber-600 shrink-0" />
                     <span>Optical Scan Telemetry: 300 DPI · Deskewed 1.4° · Optical Character Recognition Active</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-amber-200/60 font-mono text-[10px] font-bold">RAW TIFF</span>
+                  <span className="px-2 py-0.5 rounded bg-amber-200/60 font-mono text-[10px] font-bold self-start sm:self-auto shrink-0">RAW TIFF</span>
                 </div>
 
                 <div className="text-center font-bold tracking-widest text-xs py-2 uppercase border-b border-dashed border-slate-300 text-slate-800">
@@ -269,7 +269,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs">
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                     <span className="text-[10px] text-slate-400 font-bold block mb-1">VENDOR</span>
                     <span
@@ -291,8 +291,8 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 </div>
 
                 {/* Line Items Table */}
-                <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
-                  <table className="w-full text-left">
+                <div className="border border-slate-200 rounded-xl overflow-x-auto text-xs">
+                  <table className="w-full text-left min-w-[360px]">
                     <thead className="bg-slate-100/70 border-b border-slate-200 text-[11px] text-slate-600">
                       <tr>
                         <th className="py-2 px-3">Description</th>
@@ -357,98 +357,98 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             {/* RENDER CASE 3: NORTHWIND MASTER SERVICES AGREEMENT */}
             {!isTiffScan && !isInvoice && isNorthwind && (
               <>
-                <div className="text-center font-bold tracking-wider text-xs mb-6 uppercase text-slate-900">
+                <div className="text-center font-bold tracking-wider text-xs mb-5 uppercase text-slate-900">
                   Master Services Agreement
                 </div>
 
-                <p className="mb-4">
+                <p className="mb-3.5 sm:mb-4 leading-[1.85] sm:leading-relaxed">
                   This Agreement is entered into as of{" "}
                   <span
                     onClick={() => setActiveHighlight("1")}
-                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-indigo-400 bg-indigo-50/80 font-medium ${
+                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-indigo-400 bg-indigo-50/80 font-medium box-decoration-clone inline transition-all ${
                       activeHighlight === "1" ? "ring-2 ring-indigo-500 font-bold" : ""
                     }`}
                   >
                     1 December 2025
-                    <sup className="text-[10px] text-indigo-700 font-bold ml-0.5">1</sup>
+                    <sup className="text-[9px] sm:text-[10px] text-indigo-700 font-bold ml-0.5">1</sup>
                   </span>{" "}
                   by and between{" "}
                   <span
                     onClick={() => setActiveHighlight("2")}
-                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-indigo-400 bg-indigo-50/80 font-medium ${
+                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-indigo-400 bg-indigo-50/80 font-medium box-decoration-clone inline transition-all ${
                       activeHighlight === "2" ? "ring-2 ring-indigo-500 font-bold" : ""
                     }`}
                   >
                     Northwind Logistics, Inc.
-                    <sup className="text-[10px] text-indigo-700 font-bold ml-0.5">2</sup>
+                    <sup className="text-[9px] sm:text-[10px] text-indigo-700 font-bold ml-0.5">2</sup>
                   </span>{" "}
                   (&quot;Provider&quot;) and Halcyon Retail Group (&quot;Customer&quot;).
                 </p>
 
-                <p className="mb-4">
-                  <span className="font-bold">11. Fees.</span> Customer shall pay Provider an annual fee of{" "}
+                <p className="mb-3.5 sm:mb-4 leading-[1.85] sm:leading-relaxed">
+                  <span className="font-bold text-slate-900">11. Fees.</span> Customer shall pay Provider an annual fee of{" "}
                   <span
                     onClick={() => setActiveHighlight("3")}
-                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-indigo-400 bg-indigo-50/80 font-medium ${
+                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-indigo-400 bg-indigo-50/80 font-medium box-decoration-clone inline transition-all ${
                       activeHighlight === "3" ? "ring-2 ring-indigo-500 font-bold" : ""
                     }`}
                   >
                     USD 480,000
-                    <sup className="text-[10px] text-indigo-700 font-bold ml-0.5">3</sup>
+                    <sup className="text-[9px] sm:text-[10px] text-indigo-700 font-bold ml-0.5">3</sup>
                   </span>
                   , invoiced quarterly and payable within{" "}
                   <span
                     onClick={() => setActiveHighlight("4")}
-                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-indigo-400 bg-indigo-50/80 font-medium ${
+                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-indigo-400 bg-indigo-50/80 font-medium box-decoration-clone inline transition-all ${
                       activeHighlight === "4" ? "ring-2 ring-indigo-500 font-bold" : ""
                     }`}
                   >
                     forty-five (45) days
-                    <sup className="text-[10px] text-indigo-700 font-bold ml-0.5">4</sup>
+                    <sup className="text-[9px] sm:text-[10px] text-indigo-700 font-bold ml-0.5">4</sup>
                   </span>{" "}
                   of receipt.
                 </p>
 
                 {/* Risk Clause A: Auto-renewal */}
-                <p className="mb-4">
-                  <span className="font-bold">13. Term and Renewal.</span>{" "}
+                <p className="mb-3.5 sm:mb-4 leading-[1.85] sm:leading-relaxed">
+                  <span className="font-bold text-slate-900">13. Term and Renewal.</span>{" "}
                   <span
                     onClick={() => setActiveHighlight("A")}
-                    className={`cursor-pointer px-1.5 py-1 rounded border-2 border-rose-300 bg-rose-50 text-rose-900 inline transition-all ${
+                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-rose-400 bg-rose-50/90 text-rose-900 box-decoration-clone inline transition-all ${
                       activeHighlight === "A" ? "ring-2 ring-rose-500 font-semibold" : ""
                     }`}
                   >
                     This Agreement shall automatically renew for successive one-year terms unless terminated in accordance with Section 14.
-                    <sup className="text-[10px] text-rose-700 font-bold ml-1">A</sup>
+                    <sup className="text-[9px] sm:text-[10px] text-rose-700 font-bold ml-1">A</sup>
                   </span>
                 </p>
 
                 {/* Risk Clause B: Limitation of liability */}
-                <p className="mb-4">
-                  <span className="font-bold">15. Limitation of Liability.</span>{" "}
+                <p className="mb-3.5 sm:mb-4 leading-[1.85] sm:leading-relaxed">
+                  <span className="font-bold text-slate-900">15. Limitation of Liability.</span>{" "}
                   <span
                     onClick={() => setActiveHighlight("B")}
-                    className={`cursor-pointer px-1.5 py-1 rounded border-2 border-rose-400 bg-rose-50 text-rose-900 inline transition-all ${
+                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-rose-400 bg-rose-50/90 text-rose-900 box-decoration-clone inline transition-all ${
                       activeHighlight === "B" ? "ring-2 ring-rose-500 font-semibold" : ""
                     }`}
                   >
                     Provider&apos;s aggregate liability arising out of this Agreement shall not be limited
-                    <sup className="text-[10px] text-rose-700 font-bold ml-1">B</sup>
+                    <sup className="text-[9px] sm:text-[10px] text-rose-700 font-bold ml-1">B</sup>
                   </span>
                   , except as expressly provided in Section 15.3 with respect to indirect damages.
                 </p>
 
                 {/* Governing law */}
-                <p className="mb-4">
-                  <span className="font-bold">18. Governing Law.</span> This Agreement shall be governed by the laws of the{" "}
+                <p className="mb-3.5 sm:mb-4 leading-[1.85] sm:leading-relaxed">
+                  <span className="font-bold text-slate-900">18. Governing Law.</span> This Agreement shall be governed by the laws of the{" "}
                   <span
                     onClick={() => setActiveHighlight("5")}
-                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-indigo-400 bg-indigo-50/80 font-medium ${
+                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-indigo-400 bg-indigo-50/80 font-medium box-decoration-clone inline transition-all ${
                       activeHighlight === "5" ? "ring-2 ring-indigo-500 font-bold" : ""
                     }`}
                   >
                     State of Delaware
-                    <sup className="text-[10px] text-indigo-700 font-bold ml-0.5">5</sup>
+                    <sup className="text-[9px] sm:text-[10px] text-indigo-700 font-bold ml-0.5">5</sup>
                   </span>
                   .
                 </p>
@@ -466,12 +466,12 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   This Agreement governs the relationship between{" "}
                   <span
                     onClick={() => setActiveHighlight("2")}
-                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-indigo-400 bg-indigo-50/80 font-medium ${
+                    className={`cursor-pointer px-1.5 py-0.5 rounded border border-indigo-400 bg-indigo-50/80 font-medium box-decoration-clone inline transition-all ${
                       activeHighlight === "2" ? "ring-2 ring-indigo-500 font-bold" : ""
                     }`}
                   >
                     {document.counterparty || "Contract Partner"}
-                    <sup className="text-[10px] text-indigo-700 font-bold ml-0.5">2</sup>
+                    <sup className="text-[9px] sm:text-[10px] text-indigo-700 font-bold ml-0.5">2</sup>
                   </span>{" "}
                   and Halcyon Retail Group (&quot;Customer&quot;).
                 </p>
@@ -494,7 +494,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                           <span className="font-bold text-slate-900 mr-2">{clause.section || clause.title}:</span>
                           <span
                             onClick={() => setActiveHighlight(clause.highlightRef || "")}
-                            className={`cursor-pointer px-1.5 py-0.5 rounded border inline transition-all ${
+                            className={`cursor-pointer px-1.5 py-0.5 rounded border box-decoration-clone inline transition-all ${
                               isSelected
                                 ? isRisk
                                   ? "ring-2 ring-rose-500 bg-rose-100/80 border-rose-400 font-semibold"
@@ -506,7 +506,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                           >
                             {clause.description}
                             {clause.highlightRef && (
-                              <sup className="text-[10px] font-bold ml-1 text-rose-700">{clause.highlightRef}</sup>
+                              <sup className="text-[9px] sm:text-[10px] font-bold ml-1 text-rose-700">{clause.highlightRef}</sup>
                             )}
                           </span>
                         </div>
@@ -553,7 +553,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         {/* Right Column: Extracted Fields & Clauses Accordions */}
         <div className="lg:col-span-5 space-y-4">
           {/* Extracted Fields Card */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+          <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-slate-900 text-sm">
                 Extracted fields
@@ -620,7 +620,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           </div>
 
           {/* Clauses Card */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+          <div className="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200/80 shadow-sm">
             <h3 className="font-bold text-slate-900 text-sm mb-4">Clauses</h3>
 
             <div className="space-y-3">
@@ -633,44 +633,48 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   <div
                     key={clause.id}
                     onClick={() => setActiveHighlight(clause.highlightRef || null)}
-                    className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${
+                    className={`p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all ${
                       isSelected
-                        ? "border-rose-400 bg-rose-50/40 shadow-xs ring-1 ring-rose-400"
+                        ? "border-rose-400 bg-rose-50/40 shadow-xs ring-2 ring-rose-400/50"
                         : isCritical
-                        ? "border-rose-200 bg-rose-50/20 hover:border-rose-300"
+                        ? "border-rose-200/90 bg-rose-50/20 hover:border-rose-300 hover:bg-rose-50/30"
                         : isHigh
-                        ? "border-amber-200 bg-amber-50/20 hover:border-amber-300"
-                        : "border-slate-100 hover:border-slate-200 bg-white"
+                        ? "border-amber-200/90 bg-amber-50/20 hover:border-amber-300 hover:bg-amber-50/30"
+                        : "border-slate-200/80 hover:border-slate-300 bg-white"
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-1.5">
+                    {/* Top Row: Ref Badge + Severity Pill on Left, Confidence on Right */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         {clause.highlightRef && (
-                          <span className="w-4 h-4 rounded text-[10px] font-bold bg-rose-100 text-rose-700 flex items-center justify-center">
+                          <span className="w-5 h-5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 border border-rose-200">
                             {clause.highlightRef}
                           </span>
                         )}
-                        <span className="font-bold text-slate-800">
-                          {clause.title}
-                        </span>
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${
                             isCritical
-                              ? "bg-rose-100 text-rose-700"
+                              ? "bg-rose-100 text-rose-700 border border-rose-200"
                               : isHigh
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-emerald-100 text-emerald-700"
+                              ? "bg-amber-100 text-amber-700 border border-amber-200"
+                              : "bg-emerald-100 text-emerald-700 border border-emerald-200"
                           }`}
                         >
                           {clause.riskLevel}
                         </span>
                       </div>
-                      <span className="text-slate-500 font-semibold text-[11px]">
+                      <span className="text-slate-500 font-semibold font-mono text-[11px] shrink-0">
                         {clause.confidence}%
                       </span>
                     </div>
 
-                    <p className="text-[11px] text-slate-600 mt-1 leading-normal">
+                    {/* Middle Row: Dedicated Title with room to breathe */}
+                    <h4 className="font-bold text-slate-900 text-xs sm:text-[13px] leading-snug mb-1.5">
+                      {clause.title}
+                    </h4>
+
+                    {/* Bottom Row: Description */}
+                    <p className="text-[11px] sm:text-xs text-slate-600 leading-relaxed">
                       {clause.description}
                     </p>
                   </div>

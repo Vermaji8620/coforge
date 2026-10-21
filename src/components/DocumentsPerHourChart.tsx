@@ -1,7 +1,7 @@
 /**
  * Interactive Documents-Per-Hour Bar Chart component.
  * Visualizes throughput distribution across 24h, 7d, and 30d time horizons,
- * featuring interactive tooltips and highlight tokens matching the design mockups.
+ * featuring interactive tooltips, responsive horizontal overflow, and design mockup highlight tokens.
  */
 "use client";
 
@@ -24,13 +24,13 @@ export const DocumentsPerHourChart: React.FC<ChartProps> = ({
 
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6">
         <h3 className="font-semibold text-slate-900 text-sm">
           Documents per hour
         </h3>
 
         {/* Timeframe Switcher */}
-        <div className="flex items-center p-0.5 rounded-lg bg-slate-100 border border-slate-200/80 text-[11px] font-medium text-slate-600">
+        <div className="flex items-center p-0.5 rounded-lg bg-slate-100 border border-slate-200/80 text-[11px] font-medium text-slate-600 shrink-0">
           {(["24 h", "7 d", "30 d"] as const).map((t) => (
             <button
               key={t}
@@ -47,50 +47,54 @@ export const DocumentsPerHourChart: React.FC<ChartProps> = ({
         </div>
       </div>
 
-      {/* Bar Chart Visualization */}
-      <div className="h-44 flex items-end justify-between gap-1.5 pt-4 px-1 relative">
-        {hourlyData.map((val, idx) => {
-          const heightPercent = Math.max(12, Math.round((val / maxVal) * 100));
-          const isCurrent = idx === hourlyData.length - 1;
-          const isHovered = hoveredIndex === idx;
+      {/* Bar Chart Visualization with Mobile Overflow Protection */}
+      <div className="overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="min-w-[280px]">
+          <div className="h-44 flex items-end justify-between gap-1 sm:gap-1.5 pt-4 px-1 relative">
+            {hourlyData.map((val, idx) => {
+              const heightPercent = Math.max(12, Math.round((val / maxVal) * 100));
+              const isCurrent = idx === hourlyData.length - 1;
+              const isHovered = hoveredIndex === idx;
 
-          return (
-            <div
-              key={idx}
-              className="flex-1 flex flex-col items-center group relative h-full justify-end cursor-pointer"
-              onMouseEnter={() => setHoveredIndex(idx)}
-              onMouseLeave={() => setHoveredIndex(null)}
-            >
-              {/* Tooltip */}
-              {isHovered && (
-                <div className="absolute -top-8 px-2 py-1 rounded-md bg-slate-900 text-white text-[10px] font-semibold whitespace-nowrap shadow-md z-20 pointer-events-none">
-                  {val.toLocaleString()} docs
+              return (
+                <div
+                  key={idx}
+                  className="flex-1 flex flex-col items-center group relative h-full justify-end cursor-pointer"
+                  onMouseEnter={() => setHoveredIndex(idx)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                >
+                  {/* Tooltip */}
+                  {isHovered && (
+                    <div className="absolute -top-8 px-2 py-1 rounded-md bg-slate-900 text-white text-[10px] font-semibold whitespace-nowrap shadow-md z-20 pointer-events-none">
+                      {val.toLocaleString()} docs
+                    </div>
+                  )}
+
+                  {/* Bar Column */}
+                  <div
+                    style={{ height: `${heightPercent}%` }}
+                    className={`w-full rounded-t-sm transition-all duration-300 ${
+                      isCurrent
+                        ? "bg-indigo-600 shadow-sm shadow-indigo-300"
+                        : isHovered
+                        ? "bg-indigo-400"
+                        : "bg-[#c4b5fd]/60 group-hover:bg-[#a78bfa]"
+                    }`}
+                  />
                 </div>
-              )}
+              );
+            })}
+          </div>
 
-              {/* Bar Column */}
-              <div
-                style={{ height: `${heightPercent}%` }}
-                className={`w-full rounded-t-sm transition-all duration-300 ${
-                  isCurrent
-                    ? "bg-indigo-600 shadow-sm shadow-indigo-300"
-                    : isHovered
-                    ? "bg-indigo-400"
-                    : "bg-[#c4b5fd]/60 group-hover:bg-[#a78bfa]"
-                }`}
-              />
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Horizontal Axis Timestamps */}
-      <div className="flex justify-between items-center text-[10px] text-slate-400 font-medium pt-3 border-t border-slate-50 mt-2">
-        <span>00:00</span>
-        <span>06:00</span>
-        <span>12:00</span>
-        <span>18:00</span>
-        <span className="font-semibold text-indigo-600">Now</span>
+          {/* Horizontal Axis Timestamps */}
+          <div className="flex justify-between items-center text-[10px] text-slate-400 font-medium pt-3 border-t border-slate-50 mt-2">
+            <span>00:00</span>
+            <span>06:00</span>
+            <span>12:00</span>
+            <span>18:00</span>
+            <span className="font-semibold text-indigo-600">Now</span>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -87,8 +87,8 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#0f172a] text-slate-100 selection:bg-indigo-500 selection:text-white">
-      {/* Left Column: Enterprise Product Showcase */}
-      <div className="lg:w-1/2 p-8 lg:p-14 flex flex-col justify-between relative overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] border-b lg:border-b-0 lg:border-r border-indigo-950/60">
+      {/* Left Column: Enterprise Product Showcase (Hidden on mobile for immediate sign-in focus) */}
+      <div className="hidden lg:flex lg:w-1/2 p-8 lg:p-14 flex-col justify-between relative overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] border-r border-indigo-950/60">
         {/* Subtle background glow circle */}
         <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
@@ -196,8 +196,16 @@ function LoginForm() {
       </div>
 
       {/* Right Column: Clean White Authentication Box */}
-      <div className="lg:w-1/2 bg-[#f8fafc] text-slate-800 flex items-center justify-center p-6 lg:p-14">
-        <div className="w-full max-w-md bg-white rounded-3xl p-8 lg:p-10 border border-slate-200/90 shadow-xl space-y-6">
+      <div className="w-full lg:w-1/2 min-h-screen lg:min-h-0 bg-[#0f172a] lg:bg-[#f8fafc] text-slate-800 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-14">
+        {/* Mobile-only Brand Header (< lg) */}
+        <div className="lg:hidden flex items-center gap-2.5 mb-6 text-white">
+          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md">
+            <FileSpreadsheet className="w-5 h-5" />
+          </div>
+          <span className="font-bold text-white text-lg tracking-tight">CodeForge Runner</span>
+        </div>
+
+        <div className="w-full max-w-md bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-10 border border-slate-200/90 shadow-xl space-y-6">
           {/* Header & Mode Switcher */}
           <div>
             <div className="flex items-center justify-between mb-4">

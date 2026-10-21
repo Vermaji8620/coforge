@@ -237,8 +237,8 @@ export default function UploadPage() {
               PDF, TIFF, JPG, PNG, DOCX · up to 200 MB per file · 500 files per batch
             </p>
 
-            <div className="flex items-center justify-center gap-3">
-              <label className="cursor-pointer px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-200 transition-all">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <label className="cursor-pointer px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-200 transition-all text-center">
                 <span>{isUploading ? "Uploading..." : "Browse files"}</span>
                 <input
                   type="file"
@@ -251,7 +251,7 @@ export default function UploadPage() {
               <button
                 type="button"
                 onClick={() => alert("Connecting to enterprise Google Workspace Drive...")}
-                className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all"
+                className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all text-center"
               >
                 Import from Drive
               </button>
@@ -385,14 +385,14 @@ export default function UploadPage() {
               className="p-4 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
             >
               {/* Document Identity */}
-              <div className="flex items-center gap-3.5 min-w-[240px]">
+              <div className="flex items-center gap-3.5 min-w-0 md:min-w-[220px]">
                 <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 font-bold text-[10px] flex items-center justify-center shrink-0 border border-slate-200">
                   {item.format}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <Link
                     href={`/documents/${encodeURIComponent(item.docId || item.docSlug || item.name)}`}
-                    className="font-bold text-slate-800 text-xs hover:text-indigo-600 transition-colors"
+                    className="font-bold text-slate-800 text-xs hover:text-indigo-600 transition-colors truncate block"
                   >
                     {item.name}
                   </Link>
@@ -401,7 +401,7 @@ export default function UploadPage() {
               </div>
 
               {/* Multi-Stage Agentic Pipeline Status Bar */}
-              <div className="flex-1 max-w-xl grid grid-cols-4 gap-2 items-center text-[11px]">
+              <div className="flex-1 max-w-xl grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-2 items-center text-[11px]">
                 {/* 1: OCR */}
                 <div>
                   <div className="flex items-center gap-1.5 mb-1 font-medium">
@@ -518,7 +518,7 @@ export default function UploadPage() {
               </div>
 
               {/* Status Outcome */}
-              <div className="text-right min-w-[110px]">
+              <div className="text-left md:text-right min-w-0 md:min-w-[110px] pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
                 <span className={`text-xs font-semibold ${item.statusClass}`}>
                   {item.statusText}
                 </span>

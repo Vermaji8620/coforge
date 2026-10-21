@@ -71,7 +71,7 @@ export default function CompliancePage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
             Compliance & audit log
           </h1>
           <p className="text-xs text-slate-500 mt-1 font-medium">
@@ -81,7 +81,7 @@ export default function CompliancePage() {
 
         <button
           onClick={handleExportAudit}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all w-full sm:w-auto"
         >
           <Download className="w-4 h-4 text-slate-500" />
           <span>Export audit log</span>
@@ -89,20 +89,22 @@ export default function CompliancePage() {
       </div>
 
       {/* Severity Tabs Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-3.5">
         {[
           { label: "All open issues", key: "All", count: counts.all, dotColor: "bg-indigo-600" },
           { label: "Critical", key: "Critical", count: counts.critical, dotColor: "bg-rose-500" },
           { label: "High", key: "High", count: counts.high, dotColor: "bg-amber-500" },
           { label: "Medium", key: "Medium", count: counts.medium, dotColor: "bg-yellow-500" },
-          { label: "Low", key: "Low", count: counts.low, dotColor: "bg-sky-500" },
+          { label: "Low", key: "Low", count: counts.low, dotColor: "bg-sky-500", fullWidthOnMobile: true },
         ].map((tab) => {
           const isSelected = selectedRiskTab === tab.key;
           return (
             <button
               key={tab.label}
               onClick={() => setSelectedRiskTab(tab.key)}
-              className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+              className={`p-3.5 sm:p-4 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                tab.fullWidthOnMobile ? "col-span-2 sm:col-span-1" : ""
+              } ${
                 isSelected
                   ? "border-indigo-600 bg-white shadow-sm ring-1 ring-indigo-600"
                   : "border-slate-100 bg-white hover:border-slate-200"
@@ -112,7 +114,7 @@ export default function CompliancePage() {
                 <span className={`w-2 h-2 rounded-full ${tab.dotColor}`} />
                 <span className="truncate">{tab.label}</span>
               </div>
-              <span className="text-2xl font-bold text-slate-900">
+              <span className="text-xl sm:text-2xl font-bold text-slate-900">
                 {tab.count}
               </span>
             </button>
@@ -123,7 +125,7 @@ export default function CompliancePage() {
       {/* Main Two-Column: Flagged Issues List & Decision Trail Audit Inspector */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Flagged Issues List */}
-        <div className="lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
+        <div className="lg:col-span-7 bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-4">
           <div className="flex items-center justify-between pb-1">
             <h3 className="font-bold text-slate-900 text-sm">Flagged issues</h3>
             <span className="text-xs text-slate-400 font-medium">
@@ -142,7 +144,7 @@ export default function CompliancePage() {
                 <div
                   key={item._id || item.title}
                   onClick={() => setSelectedIssue(item)}
-                  className={`p-3.5 rounded-xl border text-xs cursor-pointer transition-all flex items-center justify-between ${
+                  className={`p-3.5 rounded-xl border text-xs cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
                     isSelected
                       ? "border-indigo-600 bg-indigo-50/40 shadow-xs"
                       : "border-slate-100 hover:border-slate-200 hover:bg-slate-50/60"
@@ -173,7 +175,7 @@ export default function CompliancePage() {
                     </div>
                   </div>
 
-                  <div className="text-right shrink-0">
+                  <div className="text-left sm:text-right shrink-0 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                     <span className="text-slate-600 font-semibold block text-[11px]">
                       {item.assignedTo}
                     </span>

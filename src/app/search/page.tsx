@@ -18,6 +18,7 @@ export default function SearchPage() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>(["Vendor contract"]);
   const [selectedRisks, setSelectedRisks] = useState<string[]>(["Critical", "High", "Medium"]);
   const [sortBy, setSortBy] = useState("Renewal date");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const toggleType = (t: string) => {
     setSelectedTypes((prev) =>
@@ -103,14 +104,14 @@ export default function SearchPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search contracts or ask natural language queries..."
-            className="flex-1 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none font-medium"
+            className="flex-1 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none font-medium min-w-0"
           />
-          <button className="px-5 py-2.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 transition-all">
+          <button className="px-4 sm:px-5 py-2.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 transition-all shrink-0">
             Search
           </button>
         </div>
 
-        {/* Query Decomposition Pills */}
+        {/* Query Decomposition Pills & Mobile Filter Trigger */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-slate-500 font-medium">Understood as:</span>
           <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-semibold border border-indigo-100">
@@ -125,16 +126,20 @@ export default function SearchPage() {
           <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-semibold border border-indigo-100">
             Notice period: <span className="font-bold">none</span>
           </span>
-          <button className="px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 font-medium hover:bg-slate-50">
-            Edit filters
+          <button
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className="lg:hidden flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100 transition-colors"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>{showMobileFilters ? "Hide filters" : "Edit filters"}</span>
           </button>
         </div>
       </div>
 
       {/* Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Facet Filters */}
-        <div className="lg:col-span-4 bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-6">
+        {/* Left Column: Facet Filters (Collapsible on mobile/tablet, fixed column on desktop) */}
+        <div className={`${showMobileFilters ? "block" : "hidden"} lg:block lg:col-span-4 bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-6`}>
           {/* Document Type */}
           <div>
             <h4 className="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-3">
@@ -281,7 +286,7 @@ export default function SearchPage() {
                   key={item.id}
                   className="bg-white rounded-2xl p-5 border border-slate-100 hover:border-slate-200 transition-all shadow-xs space-y-3"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5">
                       <Link
                         href={`/documents/${item.docId}`}

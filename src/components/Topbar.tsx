@@ -1,7 +1,7 @@
 /**
  * Header Topbar component for CodeForge Runner.
  * Displays contextual page headers, current workspace date indicators,
- * global document inquiry search input, and quick file ingestion triggers.
+ * global document inquiry search input, and responsive file ingestion triggers.
  */
 "use client";
 
@@ -34,7 +34,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 pt-2">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
           {title}
         </h1>
         {subtitle && (
@@ -42,9 +42,9 @@ export const Topbar: React.FC<TopbarProps> = ({
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
         {/* Global Query Input */}
-        <form onSubmit={handleSearchSubmit} className="relative w-72">
+        <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-72">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
@@ -58,7 +58,7 @@ export const Topbar: React.FC<TopbarProps> = ({
         {/* Upload Action Button */}
         <Link
           href="/upload"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition-all shadow-sm shadow-indigo-200"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition-all shadow-sm shadow-indigo-200 shrink-0"
         >
           <UploadCloud className="w-4 h-4" />
           <span>Upload documents</span>
