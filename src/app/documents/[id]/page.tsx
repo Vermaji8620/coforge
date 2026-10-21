@@ -25,7 +25,13 @@ export default function DocumentDetailsPage({
         if (res.ok) {
           const data = await res.json();
           if (data.document) {
-            setDoc(data.document);
+            const loadedDoc = data.document;
+            try {
+              const key = loadedDoc._id || loadedDoc.filename || loadedDoc.title;
+              const savedStatus = localStorage.getItem(`cf_doc_status_${key}`);
+              if (savedStatus) loadedDoc.status = savedStatus as any;
+            } catch (e) {}
+            setDoc(loadedDoc);
             return;
           }
         }
@@ -46,7 +52,13 @@ export default function DocumentDetailsPage({
           d.title?.toLowerCase().includes(cleanDecoded) ||
           d.counterparty?.toLowerCase().includes(decoded)
       );
-      setDoc((match || INITIAL_DOCUMENTS[0]) as IDocument);
+      const fallbackDoc = { ...(match || INITIAL_DOCUMENTS[0]) } as IDocument;
+      try {
+        const key = fallbackDoc._id || fallbackDoc.filename || fallbackDoc.title;
+        const savedStatus = localStorage.getItem(`cf_doc_status_${key}`);
+        if (savedStatus) fallbackDoc.status = savedStatus as any;
+      } catch (e) {}
+      setDoc(fallbackDoc);
     }
 
     loadDoc();
@@ -54,6 +66,7 @@ export default function DocumentDetailsPage({
 
   const handleApprove = async () => {
     if (!doc) return;
+    setDoc((prev) => (prev ? { ...prev, status: "Approved" } : prev));
     try {
       await fetch(`/api/documents/${doc._id || params.id}`, {
         method: "PATCH",
@@ -67,6 +80,7 @@ export default function DocumentDetailsPage({
 
   const handleSendLegal = async () => {
     if (!doc) return;
+    setDoc((prev) => (prev ? { ...prev, status: "Needs review" } : prev));
     try {
       await fetch(`/api/documents/${doc._id || params.id}`, {
         method: "PATCH",
