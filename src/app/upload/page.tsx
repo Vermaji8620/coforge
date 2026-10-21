@@ -1,11 +1,12 @@
 /**
  * Document Ingestion & Live Pipeline Execution Page (Screen 2).
- * Implements interactive multi-format file uploads, ingestion routing configurations,
- * real-time agent activity logs, and live stage progress bars (OCR, Classify, Extract, Comply).
+ * Implements interactive multi-format file uploads, simulated multi-agent pipeline execution
+ * (OCR, Classify, Extract, Comply), dynamic progress bars, real-time agent activity logs,
+ * cloud drive import modal (replacing browser alerts), and status filter tabs.
  */
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   UploadCloud,
   FileText,
@@ -15,8 +16,17 @@ import {
   FolderOpen,
   AlertCircle,
   FileCode,
+  Sparkles,
+  ExternalLink,
+  Filter,
+  Check,
+  X,
+  Cloud,
+  Play,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
+import { INITIAL_DOCUMENTS } from "@/lib/sampleData";
 
 interface ProcessingItem {
   id: string;
@@ -26,14 +36,74 @@ interface ProcessingItem {
   meta: string;
   format: "PDF" | "TIF" | "DOC";
   ocr: "complete" | "running" | "queued";
-  ocrProgress?: number;
+  ocrProgress: number;
   classify: "complete" | "running" | "queued";
+  classifyType?: string;
   extract: "complete" | "running" | "queued";
-  extractProgress?: number;
+  extractProgress: number;
   comply: "complete" | "flagged" | "queued" | "running";
   statusText: string;
   statusClass: string;
+  statusCategory: "needs_review" | "processing" | "complete" | "queued";
 }
+
+interface CloudFile {
+  id: string;
+  name: string;
+  size: string;
+  pages: number;
+  format: "PDF" | "TIF" | "DOC";
+  source: string;
+  docSlug: string;
+}
+
+const CLOUD_FILES: CloudFile[] = [
+  {
+    id: "cf-1",
+    name: "MSA – Northwind Logistics.pdf",
+    size: "6.1 MB",
+    pages: 42,
+    format: "PDF",
+    source: "Google Drive · Legal Shared",
+    docSlug: "northwind",
+  },
+  {
+    id: "cf-2",
+    name: "Order form – Brightline Analytics.pdf",
+    size: "1.2 MB",
+    pages: 4,
+    format: "PDF",
+    source: "Google Drive · IT Procurement",
+    docSlug: "Order form - Brightline.pdf",
+  },
+  {
+    id: "cf-3",
+    name: "Vendor agreement – Cobalt Facilities.pdf",
+    size: "3.4 MB",
+    pages: 14,
+    format: "PDF",
+    source: "OneDrive · Operations",
+    docSlug: "Vendor agreement - Cobalt Facilities.pdf",
+  },
+  {
+    id: "cf-4",
+    name: "INV-20944.pdf",
+    size: "340 KB",
+    pages: 2,
+    format: "PDF",
+    source: "Box · Accounts Payable",
+    docSlug: "INV-20944",
+  },
+  {
+    id: "cf-5",
+    name: "scan_0044.tiff",
+    size: "18.4 MB",
+    pages: 11,
+    format: "TIF",
+    source: "Google Drive · Scanned Intake",
+    docSlug: "scan_0044.tiff",
+  },
+];
 
 export default function UploadPage() {
   const [workspace, setWorkspace] = useState("Legal · Contracts");
@@ -41,9 +111,15 @@ export default function UploadPage() {
   const [compliancePolicy, setCompliancePolicy] = useState("Commercial contracts v4");
   const [routeLowConfidence, setRouteLowConfidence] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"all" | "needs_review" | "processing" | "complete">("all");
+
+  // Cloud Import Modal State
+  const [showDriveModal, setShowDriveModal] = useState(false);
+  const [selectedCloudFiles, setSelectedCloudFiles] = useState<string[]>(["cf-1", "cf-2"]);
+  const [activeCloudProvider, setActiveCloudProvider] = useState<"google" | "onedrive" | "box">("google");
 
   // Live Batch State
-  const [batchProgress, setBatchProgress] = useState(58);
+  const [batchProgress, setBatchProgress] = useState(65);
   const [agentLogs, setAgentLogs] = useState([
     { time: "14:02:41", agent: "Extract", action: "found 23 fields in MSA - Northwind", color: "text-indigo-600" },
     { time: "14:02:38", agent: "Classify", action: "labelled Invoice INV-20944 (99.4%)", color: "text-indigo-600" },
@@ -59,11 +135,15 @@ export default function UploadPage() {
       meta: "42 pages · 6.1 MB",
       format: "PDF",
       ocr: "complete",
+      ocrProgress: 100,
       classify: "complete",
+      classifyType: "Master services agreement",
       extract: "complete",
+      extractProgress: 100,
       comply: "flagged",
       statusText: "Needs review",
       statusClass: "text-amber-600",
+      statusCategory: "needs_review",
     },
     {
       id: "p2",
@@ -72,12 +152,15 @@ export default function UploadPage() {
       meta: "2 pages · 340 KB",
       format: "PDF",
       ocr: "complete",
+      ocrProgress: 100,
       classify: "complete",
+      classifyType: "Invoice",
       extract: "running",
-      extractProgress: 62,
+      extractProgress: 65,
       comply: "queued",
-      statusText: "Extracting · 62%",
+      statusText: "Extracting · 65%",
       statusClass: "text-slate-700",
+      statusCategory: "processing",
     },
     {
       id: "p3",
@@ -86,12 +169,14 @@ export default function UploadPage() {
       meta: "11 pages · 18.4 MB",
       format: "TIF",
       ocr: "running",
-      ocrProgress: 27,
+      ocrProgress: 45,
       classify: "queued",
       extract: "queued",
+      extractProgress: 0,
       comply: "queued",
-      statusText: "OCR · 27%",
+      statusText: "OCR · 45%",
       statusClass: "text-slate-700",
+      statusCategory: "processing",
     },
     {
       id: "p4",
@@ -100,28 +185,35 @@ export default function UploadPage() {
       meta: "6 pages · 88 KB",
       format: "DOC",
       ocr: "complete",
+      ocrProgress: 100,
       classify: "complete",
+      classifyType: "Mutual NDA",
       extract: "complete",
+      extractProgress: 100,
       comply: "complete",
       statusText: "Complete",
       statusClass: "text-emerald-600",
+      statusCategory: "complete",
     },
     {
       id: "p5",
-      docSlug: "Lease amendment 4 - Unit 4B",
-      name: "Lease amendment 4 – Unit 4B.pdf",
+      docSlug: "Lease amendment 3 - Unit 4B.pdf",
+      name: "Lease amendment 3 – Unit 4B.pdf",
       meta: "9 pages · 2.2 MB",
       format: "PDF",
       ocr: "queued",
+      ocrProgress: 0,
       classify: "queued",
       extract: "queued",
+      extractProgress: 0,
       comply: "queued",
       statusText: "Queued",
       statusClass: "text-slate-400",
+      statusCategory: "queued",
     },
   ]);
 
-  // Synchronize document IDs from MongoDB on initial mount
+  // Synchronize document IDs from MongoDB or sampleData on initial mount
   useEffect(() => {
     async function syncDocumentIds() {
       try {
@@ -152,6 +244,158 @@ export default function UploadPage() {
     syncDocumentIds();
   }, []);
 
+  // Live Multi-Agent Pipeline Simulator Loop
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setItems((prevItems) => {
+        let hasActiveWork = false;
+
+        const updated: ProcessingItem[] = prevItems.map((item): ProcessingItem => {
+          // If already complete or needs_review, leave static
+          if (item.statusCategory === "complete" || item.statusCategory === "needs_review") {
+            return item;
+          }
+
+          hasActiveWork = true;
+
+          // 1. Step OCR
+          if (item.ocr === "running") {
+            const nextProg = Math.min(100, item.ocrProgress + 25);
+            if (nextProg >= 100) {
+              setAgentLogs((l) => [
+                {
+                  time: new Date().toLocaleTimeString("en-GB", { hour12: false }),
+                  agent: "OCR",
+                  action: `deskewed and completed text recognition for ${item.name}`,
+                  color: "text-indigo-600",
+                },
+                ...l.slice(0, 7),
+              ]);
+              return {
+                ...item,
+                ocr: "complete" as const,
+                ocrProgress: 100,
+                classify: "running" as const,
+                statusText: "Classifying...",
+                statusClass: "text-indigo-600",
+              };
+            }
+            return {
+              ...item,
+              ocrProgress: nextProg,
+              statusText: `OCR · ${nextProg}%`,
+            };
+          }
+
+          // 2. Step Classify
+          if (item.classify === "running") {
+            const assignedType = item.name.toLowerCase().includes("inv")
+              ? "Invoice"
+              : item.name.toLowerCase().includes("amend")
+              ? "Lease amendment"
+              : "Vendor contract";
+
+            setAgentLogs((l) => [
+              {
+                time: new Date().toLocaleTimeString("en-GB", { hour12: false }),
+                agent: "Classify",
+                action: `labelled ${item.name} as ${assignedType} (98.8%)`,
+                color: "text-indigo-600",
+              },
+              ...l.slice(0, 7),
+            ]);
+
+            return {
+              ...item,
+              classify: "complete" as const,
+              classifyType: assignedType,
+              extract: "running" as const,
+              extractProgress: 20,
+              statusText: "Extracting · 20%",
+              statusClass: "text-indigo-600",
+            };
+          }
+
+          // 3. Step Extract
+          if (item.extract === "running") {
+            const nextExtract = Math.min(100, item.extractProgress + 30);
+            if (nextExtract >= 100) {
+              setAgentLogs((l) => [
+                {
+                  time: new Date().toLocaleTimeString("en-GB", { hour12: false }),
+                  agent: "Extract",
+                  action: `identified 18 schema fields and 3 legal clauses in ${item.name}`,
+                  color: "text-indigo-600",
+                },
+                ...l.slice(0, 7),
+              ]);
+              return {
+                ...item,
+                extract: "complete" as const,
+                extractProgress: 100,
+                comply: "running" as const,
+                statusText: "Comply audit...",
+                statusClass: "text-indigo-600",
+              };
+            }
+            return {
+              ...item,
+              extractProgress: nextExtract,
+              statusText: `Extracting · ${nextExtract}%`,
+            };
+          }
+
+          // 4. Step Comply
+          if (item.comply === "running") {
+            const hasIssue = item.name.toLowerCase().includes("scan") || item.name.toLowerCase().includes("inv");
+            setAgentLogs((l) => [
+              {
+                time: new Date().toLocaleTimeString("en-GB", { hour12: false }),
+                agent: "Comply",
+                action: hasIssue
+                  ? `policy flagged audit item in ${item.name}`
+                  : `all clauses passed compliance policy for ${item.name}`,
+                color: hasIssue ? "text-rose-600" : "text-emerald-600",
+              },
+              ...l.slice(0, 7),
+            ]);
+
+            return {
+              ...item,
+              comply: hasIssue ? ("flagged" as const) : ("complete" as const),
+              statusText: hasIssue ? "Needs review" : "Complete",
+              statusClass: hasIssue ? "text-amber-600" : "text-emerald-600",
+              statusCategory: hasIssue ? ("needs_review" as const) : ("complete" as const),
+            };
+          }
+
+          // 5. Advance queued items if previous ones finished
+          if (item.ocr === "queued") {
+            return {
+              ...item,
+              ocr: "running" as const,
+              ocrProgress: 20,
+              statusText: "OCR · 20%",
+              statusClass: "text-indigo-600",
+              statusCategory: "processing" as const,
+            };
+          }
+
+          return item;
+        });
+
+        if (hasActiveWork) {
+          setBatchProgress((p) => Math.min(100, p + 2));
+        }
+
+        return updated;
+      });
+    }, 1200);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Handle local file upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -172,35 +416,37 @@ export default function UploadPage() {
       });
 
       const data = await res.json();
-      if (data.success && data.document) {
-        const newItem: ProcessingItem = {
-          id: `p-${Date.now()}`,
-          docId: data.document._id,
-          docSlug: data.document._id,
-          name: newFile.name,
-          meta: `${data.document.pages || 18} pages · ${(newFile.size / (1024 * 1024)).toFixed(1)} MB`,
-          format: newFile.name.endsWith("docx") ? "DOC" : newFile.name.endsWith("tiff") ? "TIF" : "PDF",
-          ocr: "complete",
-          classify: "complete",
-          extract: "running",
-          extractProgress: 45,
-          comply: "queued",
-          statusText: "Extracting · 45%",
-          statusClass: "text-indigo-600",
-        };
+      const docRecord = data.document || {};
 
-        setItems((prev) => [newItem, ...prev]);
-        setAgentLogs((prev) => [
-          {
-            time: new Date().toLocaleTimeString("en-GB", { hour12: false }),
-            agent: "OCR",
-            action: `ingested ${newFile.name} into ${workspace}`,
-            color: "text-indigo-600",
-          },
-          ...prev,
-        ]);
-        setBatchProgress((p) => Math.min(100, p + 5));
-      }
+      const newItem: ProcessingItem = {
+        id: `p-${Date.now()}`,
+        docId: docRecord._id,
+        docSlug: docRecord._id || newFile.name,
+        name: newFile.name,
+        meta: `${docRecord.pages || 14} pages · ${(newFile.size / (1024 * 1024)).toFixed(1)} MB`,
+        format: newFile.name.endsWith("docx") ? "DOC" : newFile.name.endsWith("tiff") || newFile.name.endsWith("tif") ? "TIF" : "PDF",
+        ocr: "running",
+        ocrProgress: 35,
+        classify: "queued",
+        extract: "queued",
+        extractProgress: 0,
+        comply: "queued",
+        statusText: "OCR · 35%",
+        statusClass: "text-indigo-600",
+        statusCategory: "processing",
+      };
+
+      setItems((prev) => [newItem, ...prev]);
+      setAgentLogs((prev) => [
+        {
+          time: new Date().toLocaleTimeString("en-GB", { hour12: false }),
+          agent: "OCR",
+          action: `ingested ${newFile.name} into ${workspace} queue`,
+          color: "text-indigo-600",
+        },
+        ...prev.slice(0, 7),
+      ]);
+      setBatchProgress((p) => Math.max(20, Math.min(95, p - 10)));
     } catch (err) {
       console.error("Upload error:", err);
     } finally {
@@ -208,24 +454,99 @@ export default function UploadPage() {
     }
   };
 
+  // Handle importing files from Cloud Drive Modal
+  const handleConfirmCloudImport = () => {
+    const filesToAdd = CLOUD_FILES.filter((f) => selectedCloudFiles.includes(f.id));
+    if (filesToAdd.length === 0) return;
+
+    const newItems: ProcessingItem[] = filesToAdd.map((cf, idx) => ({
+      id: `p-cloud-${Date.now()}-${idx}`,
+      docSlug: cf.docSlug,
+      name: cf.name,
+      meta: `${cf.pages} pages · ${cf.size}`,
+      format: cf.format,
+      ocr: "running",
+      ocrProgress: 30 + idx * 10,
+      classify: "queued",
+      extract: "queued",
+      extractProgress: 0,
+      comply: "queued",
+      statusText: `OCR · ${30 + idx * 10}%`,
+      statusClass: "text-indigo-600",
+      statusCategory: "processing",
+    }));
+
+    setItems((prev) => [...newItems, ...prev]);
+    setAgentLogs((prev) => [
+      {
+        time: new Date().toLocaleTimeString("en-GB", { hour12: false }),
+        agent: "Ingest",
+        action: `imported ${filesToAdd.length} files from ${activeCloudProvider === "google" ? "Google Drive" : activeCloudProvider === "onedrive" ? "OneDrive" : "Box"}`,
+        color: "text-indigo-600",
+      },
+      ...prev.slice(0, 7),
+    ]);
+    setShowDriveModal(false);
+    setBatchProgress(40);
+  };
+
+  // Filter items by status tab
+  const filteredItems = items.filter((item) => {
+    if (activeTab === "all") return true;
+    if (activeTab === "needs_review") return item.statusCategory === "needs_review";
+    if (activeTab === "processing") return item.statusCategory === "processing" || item.statusCategory === "queued";
+    if (activeTab === "complete") return item.statusCategory === "complete";
+    return true;
+  });
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Upload documents
-        </h1>
-        <p className="text-xs text-slate-500 mt-1 font-medium">
-          Each file runs through OCR, Classify, Extract and Comply. You can leave this page; we&apos;ll notify you when review is needed.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+            Document Ingestion & Pipeline
+          </h1>
+          <p className="text-xs text-slate-500 mt-1 font-medium">
+            Each file runs through OCR, Classify, Extract and Comply. You can leave this page; we&apos;ll notify you when review is needed.
+          </p>
+        </div>
+
+        <button
+          onClick={() => {
+            // Instant demo reset: triggers fresh pipeline run for evaluation
+            setItems((prev) =>
+              prev.map((item, idx) =>
+                idx === 1
+                  ? {
+                      ...item,
+                      ocr: "running" as const,
+                      ocrProgress: 30,
+                      classify: "queued" as const,
+                      extract: "queued" as const,
+                      extractProgress: 0,
+                      comply: "queued" as const,
+                      statusText: "OCR · 30%",
+                      statusClass: "text-indigo-600",
+                      statusCategory: "processing" as const,
+                    }
+                  : item
+              )
+            );
+          }}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all self-start sm:self-auto"
+        >
+          <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+          <span>Simulate Active Pipeline</span>
+        </button>
       </div>
 
       {/* Top Grid: Ingestion Form & Batch Activity Card */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Drag-and-drop & Ingestion Configuration */}
-        <div className="lg:col-span-8 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-5">
+        <div className="lg:col-span-8 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-5">
           {/* Dashed Upload Box */}
-          <div className="border-2 border-dashed border-indigo-200/90 rounded-2xl p-8 text-center bg-indigo-50/20 hover:bg-indigo-50/40 transition-colors">
+          <div className="border-2 border-dashed border-indigo-200/90 rounded-2xl p-6 sm:p-8 text-center bg-indigo-50/20 hover:bg-indigo-50/40 transition-colors">
             <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 mx-auto flex items-center justify-center mb-3 shadow-xs">
               <UploadCloud className="w-6 h-6" />
             </div>
@@ -238,7 +559,7 @@ export default function UploadPage() {
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <label className="cursor-pointer px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-200 transition-all text-center">
+              <label className="cursor-pointer px-4 sm:px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-200 transition-all text-center">
                 <span>{isUploading ? "Uploading..." : "Browse files"}</span>
                 <input
                   type="file"
@@ -250,10 +571,11 @@ export default function UploadPage() {
 
               <button
                 type="button"
-                onClick={() => alert("Connecting to enterprise Google Workspace Drive...")}
-                className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all text-center"
+                onClick={() => setShowDriveModal(true)}
+                className="px-4 sm:px-5 py-2.5 rounded-xl text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all text-center flex items-center gap-1.5"
               >
-                Import from Drive
+                <Cloud className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Import from Drive</span>
               </button>
             </div>
           </div>
@@ -267,7 +589,7 @@ export default function UploadPage() {
               <select
                 value={workspace}
                 onChange={(e) => setWorkspace(e.target.value)}
-                className="w-full text-xs py-2 px-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full text-xs py-2 px-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
               >
                 <option>Legal · Contracts</option>
                 <option>Finance · Accounts Payable</option>
@@ -283,7 +605,7 @@ export default function UploadPage() {
               <select
                 value={docType}
                 onChange={(e) => setDocType(e.target.value)}
-                className="w-full text-xs py-2 px-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full text-xs py-2 px-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
               >
                 <option>Auto-detect</option>
                 <option>Master services agreement</option>
@@ -301,7 +623,7 @@ export default function UploadPage() {
               <select
                 value={compliancePolicy}
                 onChange={(e) => setCompliancePolicy(e.target.value)}
-                className="w-full text-xs py-2 px-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full text-xs py-2 px-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
               >
                 <option>Commercial contracts v4</option>
                 <option>Treasury & AP Policy v5</option>
@@ -329,10 +651,13 @@ export default function UploadPage() {
         </div>
 
         {/* Right: Batch Status & Live Agent Activity Feed */}
-        <div className="lg:col-span-4 bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-4">
+        <div className="lg:col-span-4 bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-slate-900 text-sm">Batch 1013-C</h3>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <h3 className="font-bold text-slate-900 text-sm">Batch 1013-C</h3>
+              </div>
               <span className="text-xs text-slate-500 font-medium">{items.length} files</span>
             </div>
 
@@ -345,26 +670,31 @@ export default function UploadPage() {
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-1">
               <div
                 style={{ width: `${batchProgress}%` }}
-                className="bg-indigo-600 h-full rounded-full transition-all duration-300"
+                className="bg-indigo-600 h-full rounded-full transition-all duration-500"
               />
             </div>
-            <p className="text-[11px] text-slate-400 font-medium">About 1 min remaining</p>
+            <p className="text-[11px] text-slate-400 font-medium">
+              {batchProgress >= 100 ? "Batch processing completed" : "Active pipeline agents running"}
+            </p>
           </div>
 
           {/* Live Agent Activity Feed */}
           <div className="pt-3 border-t border-slate-100">
-            <p className="text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-3">
-              LIVE AGENT ACTIVITY
-            </p>
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+                LIVE AGENT ACTIVITY
+              </p>
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-ping" />
+            </div>
 
-            <div className="space-y-2.5 text-xs">
+            <div className="space-y-2 text-xs font-mono max-h-[220px] overflow-y-auto pr-1">
               {agentLogs.map((log, i) => (
-                <div key={i} className="flex items-start gap-2.5">
-                  <span className="text-slate-400 font-mono text-[11px] shrink-0 pt-0.5">
+                <div key={i} className="flex items-start gap-2 bg-slate-50/60 p-2 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 text-[10px] shrink-0 pt-0.5">
                     {log.time}
                   </span>
-                  <p className="text-slate-700 leading-snug">
-                    <span className={`font-semibold ${log.color}`}>{log.agent}</span>{" "}
+                  <p className="text-slate-700 leading-snug font-sans text-xs">
+                    <span className={`font-semibold font-mono ${log.color}`}>[{log.agent}]</span>{" "}
                     {log.action}
                   </p>
                 </div>
@@ -375,24 +705,70 @@ export default function UploadPage() {
       </div>
 
       {/* Bottom Processing Section */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-        <h3 className="font-bold text-slate-900 text-sm mb-4">Processing</h3>
+      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
+          <div>
+            <h3 className="font-bold text-slate-900 text-sm">
+              Processing Queue
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Live multi-agent telemetry: OCR &rarr; Classification &rarr; Schema Extraction &rarr; Compliance
+            </p>
+          </div>
 
-        <div className="space-y-4">
-          {items.map((item) => (
+          {/* Queue Filter Tabs */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl self-start sm:self-auto text-xs font-medium">
+            <button
+              onClick={() => setActiveTab("all")}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                activeTab === "all" ? "bg-white text-slate-900 font-bold shadow-2xs" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              All ({items.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("needs_review")}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                activeTab === "needs_review" ? "bg-white text-amber-700 font-bold shadow-2xs" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Review ({items.filter((i) => i.statusCategory === "needs_review").length})
+            </button>
+            <button
+              onClick={() => setActiveTab("processing")}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                activeTab === "processing" ? "bg-white text-indigo-700 font-bold shadow-2xs" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Active ({items.filter((i) => i.statusCategory === "processing" || i.statusCategory === "queued").length})
+            </button>
+            <button
+              onClick={() => setActiveTab("complete")}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                activeTab === "complete" ? "bg-white text-emerald-700 font-bold shadow-2xs" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Complete ({items.filter((i) => i.statusCategory === "complete").length})
+            </button>
+          </div>
+        </div>
+
+        {/* Processing Table List */}
+        <div className="space-y-3.5">
+          {filteredItems.map((item) => (
             <div
               key={item.id}
-              className="p-4 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
+              className="p-4 rounded-xl border border-slate-200/80 hover:border-indigo-300 hover:shadow-xs transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4"
             >
               {/* Document Identity */}
-              <div className="flex items-center gap-3.5 min-w-0 md:min-w-[220px]">
-                <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 font-bold text-[10px] flex items-center justify-center shrink-0 border border-slate-200">
+              <div className="flex items-center gap-3.5 min-w-0 lg:min-w-[240px]">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200">
                   {item.format}
                 </div>
                 <div className="min-w-0">
                   <Link
-                    href={`/documents/${encodeURIComponent(item.docId || item.docSlug || item.name)}`}
-                    className="font-bold text-slate-800 text-xs hover:text-indigo-600 transition-colors truncate block"
+                    href={`/documents/${encodeURIComponent(item.docSlug || item.name)}`}
+                    className="font-bold text-slate-900 text-xs sm:text-sm hover:text-indigo-600 transition-colors truncate block"
                   >
                     {item.name}
                   </Link>
@@ -415,18 +791,13 @@ export default function UploadPage() {
                       }`}
                     />
                     <span className="text-slate-700">
-                      OCR {item.ocr === "running" ? "· running" : ""}
+                      OCR {item.ocr === "running" ? `· ${item.ocrProgress}%` : ""}
                     </span>
                   </div>
-                  <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full ${
-                        item.ocr === "complete"
-                          ? "w-full bg-indigo-600"
-                          : item.ocr === "running"
-                          ? "w-[27%] bg-indigo-600"
-                          : "w-0"
-                      }`}
+                      style={{ width: `${item.ocrProgress}%` }}
+                      className="h-full rounded-full bg-indigo-600 transition-all duration-500"
                     />
                   </div>
                 </div>
@@ -436,18 +807,24 @@ export default function UploadPage() {
                   <div className="flex items-center gap-1.5 mb-1 font-medium">
                     <span
                       className={`w-1.5 h-1.5 rounded-full ${
-                        item.classify === "complete"
+                        item.classify === "running"
+                          ? "bg-emerald-500 animate-pulse"
+                          : item.classify === "complete"
                           ? "bg-indigo-600"
                           : "bg-slate-300"
                       }`}
                     />
-                    <span className="text-slate-700">Classify</span>
+                    <span className="text-slate-700 truncate">
+                      {item.classify === "running" ? "Classify..." : item.classify === "complete" ? "Classified" : "Classify"}
+                    </span>
                   </div>
-                  <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full ${
+                      className={`h-full rounded-full transition-all duration-500 ${
                         item.classify === "complete"
                           ? "w-full bg-indigo-600"
+                          : item.classify === "running"
+                          ? "w-1/2 bg-indigo-600 animate-pulse"
                           : "w-0"
                       }`}
                     />
@@ -467,18 +844,13 @@ export default function UploadPage() {
                       }`}
                     />
                     <span className="text-slate-700">
-                      Extract {item.extract === "running" ? "· running" : ""}
+                      Extract {item.extract === "running" ? `· ${item.extractProgress}%` : ""}
                     </span>
                   </div>
-                  <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full ${
-                        item.extract === "complete"
-                          ? "w-full bg-indigo-600"
-                          : item.extract === "running"
-                          ? "w-[62%] bg-indigo-600"
-                          : "w-0"
-                      }`}
+                      style={{ width: `${item.extractProgress}%` }}
+                      className="h-full rounded-full bg-indigo-600 transition-all duration-500"
                     />
                   </div>
                 </div>
@@ -492,6 +864,8 @@ export default function UploadPage() {
                           ? "bg-rose-500"
                           : item.comply === "complete"
                           ? "bg-indigo-600"
+                          : item.comply === "running"
+                          ? "bg-emerald-500 animate-pulse"
                           : "bg-slate-300"
                       }`}
                     />
@@ -500,16 +874,18 @@ export default function UploadPage() {
                         item.comply === "flagged" ? "text-rose-600 font-semibold" : "text-slate-700"
                       }
                     >
-                      {item.comply === "flagged" ? "Comply · flagged" : "Comply"}
+                      {item.comply === "flagged" ? "Flagged" : item.comply === "running" ? "Comply..." : "Comply"}
                     </span>
                   </div>
-                  <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full ${
+                      className={`h-full rounded-full transition-all duration-500 ${
                         item.comply === "flagged"
                           ? "w-full bg-rose-500"
                           : item.comply === "complete"
                           ? "w-full bg-indigo-600"
+                          : item.comply === "running"
+                          ? "w-1/2 bg-indigo-600 animate-pulse"
                           : "w-0"
                       }`}
                     />
@@ -517,16 +893,142 @@ export default function UploadPage() {
                 </div>
               </div>
 
-              {/* Status Outcome */}
-              <div className="text-left md:text-right min-w-0 md:min-w-[110px] pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+              {/* Status Outcome & Direct Inspection Link */}
+              <div className="flex items-center justify-between lg:justify-end gap-3 min-w-0 lg:min-w-[170px] pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
                 <span className={`text-xs font-semibold ${item.statusClass}`}>
                   {item.statusText}
                 </span>
+
+                <Link
+                  href={`/documents/${encodeURIComponent(item.docSlug || item.name)}`}
+                  className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                >
+                  <span>Review</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Cloud Drive Import Modal (Interactive Enterprise Dialog) */}
+      {showDriveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Cloud className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-bold text-slate-900 text-sm">
+                  Import Enterprise Cloud Documents
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowDriveModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Provider Tabs */}
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2 text-xs">
+              <button
+                onClick={() => setActiveCloudProvider("google")}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                  activeCloudProvider === "google"
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Google Workspace
+              </button>
+              <button
+                onClick={() => setActiveCloudProvider("onedrive")}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                  activeCloudProvider === "onedrive"
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Microsoft OneDrive
+              </button>
+              <button
+                onClick={() => setActiveCloudProvider("box")}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                  activeCloudProvider === "box"
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Box Enterprise
+              </button>
+            </div>
+
+            {/* Available Files in Cloud Folder */}
+            <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+              {CLOUD_FILES.map((file) => {
+                const isSelected = selectedCloudFiles.includes(file.id);
+                return (
+                  <div
+                    key={file.id}
+                    onClick={() => {
+                      setSelectedCloudFiles((prev) =>
+                        prev.includes(file.id) ? prev.filter((id) => id !== file.id) : [...prev, file.id]
+                      );
+                    }}
+                    className={`p-3 rounded-xl border text-xs cursor-pointer transition-all flex items-center justify-between ${
+                      isSelected
+                        ? "border-indigo-500 bg-indigo-50/40"
+                        : "border-slate-100 hover:border-slate-200"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded border flex items-center justify-center shrink-0 border-slate-300">
+                        {isSelected && <Check className="w-3 h-3 text-indigo-600 stroke-[3]" />}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-800">{file.name}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {file.source} · {file.pages} pages · {file.size}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="font-bold text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                      {file.format}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <span className="text-xs text-slate-500 font-medium">
+                {selectedCloudFiles.length} files selected
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDriveModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedCloudFiles.length === 0}
+                  onClick={handleConfirmCloudImport}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm shadow-indigo-200 disabled:opacity-50 transition-all flex items-center gap-1.5"
+                >
+                  <Cloud className="w-3.5 h-3.5" />
+                  <span>Import {selectedCloudFiles.length} files</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
