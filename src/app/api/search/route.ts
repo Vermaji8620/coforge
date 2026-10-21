@@ -11,6 +11,27 @@ import { INITIAL_DOCUMENTS } from "@/lib/sampleData";
 
 export const dynamic = "force-dynamic";
 
+// Canonical document type matcher
+function matchesDocType(docType: string, title: string, filterLabel: string): boolean {
+  const combined = (docType + " " + title).toLowerCase();
+  if (filterLabel === "Vendor contract") {
+    return combined.includes("vendor") || combined.includes("service") || combined.includes("scanned");
+  }
+  if (filterLabel === "Order form") {
+    return combined.includes("order") || combined.includes("saas");
+  }
+  if (filterLabel === "MSA") {
+    return combined.includes("msa") || combined.includes("master");
+  }
+  if (filterLabel === "Amendment") {
+    return combined.includes("amend") || combined.includes("lease");
+  }
+  if (filterLabel === "Invoice") {
+    return combined.includes("inv") || combined.includes("invoice") || combined.includes("bill");
+  }
+  return combined.includes(filterLabel.toLowerCase());
+}
+
 // Helper to extract query decomposition intents
 function decomposeQuery(query: string) {
   const q = query.toLowerCase();
@@ -134,8 +155,7 @@ export async function POST(req: Request) {
       // 3. Document type filter
       if (docTypes && docTypes.length > 0) {
         const matchesType = docTypes.some((t: string) =>
-          doc.docType?.toLowerCase().includes(t.toLowerCase()) ||
-          doc.title?.toLowerCase().includes(t.toLowerCase())
+          matchesDocType(doc.docType || "", doc.title || "", t)
         );
         if (!matchesType) return false;
       }

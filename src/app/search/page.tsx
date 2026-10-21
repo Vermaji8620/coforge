@@ -136,6 +136,27 @@ function parseDollar(val?: string): number {
   return parseFloat(num) || 0;
 }
 
+// Canonical document type matcher
+function matchesDocType(docType: string, title: string, filterLabel: string): boolean {
+  const combined = (docType + " " + title).toLowerCase();
+  if (filterLabel === "Vendor contract") {
+    return combined.includes("vendor") || combined.includes("service") || combined.includes("scanned");
+  }
+  if (filterLabel === "Order form") {
+    return combined.includes("order") || combined.includes("saas");
+  }
+  if (filterLabel === "MSA") {
+    return combined.includes("msa") || combined.includes("master");
+  }
+  if (filterLabel === "Amendment") {
+    return combined.includes("amend") || combined.includes("lease");
+  }
+  if (filterLabel === "Invoice") {
+    return combined.includes("inv") || combined.includes("invoice") || combined.includes("bill");
+  }
+  return combined.includes(filterLabel.toLowerCase());
+}
+
 export default function SearchPage() {
   const [query, setQuery] = useState(
     "Vendor contracts that auto-renew before June 2027 without a termination notice period"
@@ -144,16 +165,19 @@ export default function SearchPage() {
     "Vendor contracts that auto-renew before June 2027 without a termination notice period"
   );
 
-  // Facet filter states
+  // Facet filter states - canonical labels matching the UI checkboxes exactly
   const [selectedTypes, setSelectedTypes] = useState<string[]>([
     "Vendor contract",
-    "Master services agreement",
-    "SaaS order form",
+    "Order form",
+    "MSA",
+    "Amendment",
+    "Invoice",
   ]);
   const [selectedRisks, setSelectedRisks] = useState<string[]>([
     "Critical",
     "High",
     "Medium",
+    "Low",
   ]);
   const [counterparty, setCounterparty] = useState("");
   const [minConfidence, setMinConfidence] = useState(85);
@@ -213,18 +237,17 @@ export default function SearchPage() {
       if (item.confidence < minConfidence) return false;
 
       // 2. Risk Level Filter
-      if (selectedRisks.length > 0 && !selectedRisks.includes(item.riskLevel)) {
+      if (selectedRisks.length === 0) return false;
+      if (!selectedRisks.includes(item.riskLevel)) {
         return false;
       }
 
       // 3. Document Type Filter
-      if (selectedTypes.length > 0) {
-        const matchesType = selectedTypes.some((t) =>
-          item.docType.toLowerCase().includes(t.toLowerCase()) ||
-          item.title.toLowerCase().includes(t.toLowerCase())
-        );
-        if (!matchesType) return false;
-      }
+      if (selectedTypes.length === 0) return false;
+      const matchesType = selectedTypes.some((t) =>
+        matchesDocType(item.docType, item.title, t)
+      );
+      if (!matchesType) return false;
 
       // 4. Counterparty Filter
       if (counterparty.trim()) {
@@ -307,11 +330,10 @@ export default function SearchPage() {
   const handleResetFilters = () => {
     setSelectedTypes([
       "Vendor contract",
-      "Master services agreement",
-      "SaaS order form",
-      "Lease amendment",
+      "Order form",
+      "MSA",
+      "Amendment",
       "Invoice",
-      "Mutual NDA",
     ]);
     setSelectedRisks(["Critical", "High", "Medium", "Low"]);
     setCounterparty("");
@@ -357,7 +379,7 @@ export default function SearchPage() {
     }, totalling about ${formattedTotal} in annual value. ${earliestMention}`;
   }, [filteredResults, activeQuery]);
 
-  // Facet counts computed live from corpus
+  // Facet counts computed live from corpus using the canonical matcher
   const typeFacetCounts = useMemo(() => {
     const counts: Record<string, number> = {
       "Vendor contract": 0,
@@ -367,12 +389,11 @@ export default function SearchPage() {
       Invoice: 0,
     };
     baseCorpus.forEach((item) => {
-      const dt = item.docType.toLowerCase();
-      if (dt.includes("vendor")) counts["Vendor contract"]++;
-      if (dt.includes("order") || dt.includes("saas")) counts["Order form"]++;
-      if (dt.includes("msa") || dt.includes("master")) counts["MSA"]++;
-      if (dt.includes("amend") || dt.includes("lease")) counts["Amendment"]++;
-      if (dt.includes("inv")) counts["Invoice"]++;
+      if (matchesDocType(item.docType, item.title, "Vendor contract")) counts["Vendor contract"]++;
+      if (matchesDocType(item.docType, item.title, "Order form")) counts["Order form"]++;
+      if (matchesDocType(item.docType, item.title, "MSA")) counts["MSA"]++;
+      if (matchesDocType(item.docType, item.title, "Amendment")) counts["Amendment"]++;
+      if (matchesDocType(item.docType, item.title, "Invoice")) counts["Invoice"]++;
     });
     return counts;
   }, [baseCorpus]);
@@ -502,10 +523,7 @@ export default function SearchPage() {
                   <div className="flex items-center gap-2.5">
                     <input
                       type="checkbox"
-                      checked={selectedTypes.some((t) =>
-                        t.toLowerCase().includes(item.label.toLowerCase()) ||
-                        item.label.toLowerCase().includes(t.toLowerCase())
-                      )}
+                      checked={selectedTypes.includes(item.label)}
                       onChange={() => toggleType(item.label)}
                       className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
                     />
