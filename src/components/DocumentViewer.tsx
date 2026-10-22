@@ -49,27 +49,34 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
     );
 
     try {
-      // 1. Restore verified fields from localStorage
+      // 1. Restore verified fields combining localStorage and MongoDB DB records
+      let verifiedFromLocal: string[] = [];
       const savedFields = localStorage.getItem(`cf_verified_fields_${docKey}`);
       if (savedFields) {
-        setVerifiedFieldIds(JSON.parse(savedFields));
-      } else {
-        // Fallback: check if document schema already has 100% confidence verified fields
-        const initialVerified = (document.extractedFields || [])
-          .filter((f) => f.confidence === 100 && !f.needsReview)
-          .map((f) => f.id);
-        setVerifiedFieldIds(initialVerified);
+        try {
+          verifiedFromLocal = JSON.parse(savedFields);
+        } catch (e) {}
       }
+      const verifiedFromDb = (document.extractedFields || [])
+        .filter((f) => f.confidence === 100 && !f.needsReview)
+        .map((f) => f.id);
+      const combinedVerified = Array.from(new Set([...verifiedFromLocal, ...verifiedFromDb]));
+      setVerifiedFieldIds(combinedVerified);
 
-      // 2. Restore document status
+      // 2. Restore document status: If DB status is already Approved/Needs review/Flagged, prioritize DB
       const savedStatus = localStorage.getItem(`cf_doc_status_${docKey}`);
-      if (savedStatus) {
+      if (document.status && document.status !== "Processing") {
+        setApprovalStatus(document.status);
+        try {
+          localStorage.setItem(`cf_doc_status_${docKey}`, document.status);
+        } catch (e) {}
+      } else if (savedStatus) {
         setApprovalStatus(savedStatus);
       } else {
-        setApprovalStatus(document.status || "Processing");
+        setApprovalStatus(document.status || "Approved");
       }
     } catch (e) {
-      setApprovalStatus(document.status || "Processing");
+      setApprovalStatus(document.status || "Approved");
     }
 
     setToast(null);
@@ -82,10 +89,15 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     setApprovalStatus("Approved");
     try {
       localStorage.setItem(`cf_doc_status_${docKey}`, "Approved");
+      await fetch(`/api/documents/${encodeURIComponent(docKey)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Approved" }),
+      });
     } catch (e) {}
 
     setToast({
@@ -95,10 +107,15 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
     onApprove?.();
   };
 
-  const handleSendLegal = () => {
+  const handleSendLegal = async () => {
     setApprovalStatus("In Legal Review");
     try {
       localStorage.setItem(`cf_doc_status_${docKey}`, "In Legal Review");
+      await fetch(`/api/documents/${encodeURIComponent(docKey)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Needs review" }),
+      });
     } catch (e) {}
 
     setToast({

@@ -75,7 +75,7 @@ export async function POST(req: Request) {
     // If routeLowConfidence is enabled, flag a low-confidence field (<90%) for human review
     const shouldRouteToReview = routeLowConfidence !== false; // defaults to true if not specified
     const primaryConfidence = shouldRouteToReview ? 88.5 : 97.4;
-    const initialStatus = shouldRouteToReview ? "Needs review" : "Processing";
+    const initialStatus = shouldRouteToReview ? "Needs review" : "Approved";
 
     const extractedFields = [
       { id: "ef1", index: 1, label: "Effective date", value: "1 Jan 2026", confidence: 99.1, highlightRef: "1", needsReview: false },

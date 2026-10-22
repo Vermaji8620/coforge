@@ -78,10 +78,17 @@ export default function DashboardPage() {
         }
 
         // Real-time compliance issues sync with local human overrides
-        let localOverrides: string[] = [];
+        let overriddenKeys: string[] = [];
         try {
           const raw = localStorage.getItem("cf_overridden_issues");
-          if (raw) localOverrides = JSON.parse(raw);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              overriddenKeys = parsed;
+            } else if (parsed && typeof parsed === "object") {
+              overriddenKeys = Object.keys(parsed);
+            }
+          }
         } catch (e) {}
 
         if (complianceRes.ok) {
@@ -90,7 +97,9 @@ export default function DashboardPage() {
 
           const openIssues = allIssues.filter(
             (issue: any) =>
-              issue.status === "Open" && !localOverrides.includes(issue._id)
+              issue.status === "Open" &&
+              !overriddenKeys.includes(issue._id) &&
+              !overriddenKeys.includes(issue.title)
           );
 
           setComplianceIssues(openIssues);

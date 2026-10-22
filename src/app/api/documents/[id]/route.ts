@@ -95,6 +95,23 @@ export async function PATCH(
     const searchTerm = escapeRegExp(rawId);
     const updates = await req.json();
 
+    // Keep pipelineStages in sync with document status
+    if (updates.status === "Approved") {
+      updates["pipelineStages.ocr"] = "complete";
+      updates["pipelineStages.classify"] = "complete";
+      updates["pipelineStages.extract"] = "complete";
+      updates["pipelineStages.comply"] = "complete";
+      updates["pipelineStages.ocrProgress"] = 100;
+      updates["pipelineStages.extractProgress"] = 100;
+    } else if (updates.status === "Needs review") {
+      updates["pipelineStages.ocr"] = "complete";
+      updates["pipelineStages.classify"] = "complete";
+      updates["pipelineStages.extract"] = "complete";
+      updates["pipelineStages.comply"] = "flagged";
+      updates["pipelineStages.ocrProgress"] = 100;
+      updates["pipelineStages.extractProgress"] = 100;
+    }
+
     let doc = null;
     if (rawId.match(/^[0-9a-fA-F]{24}$/)) {
       doc = await DocumentModel.findByIdAndUpdate(rawId, updates, { new: true });
