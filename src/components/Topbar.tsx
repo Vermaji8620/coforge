@@ -17,7 +17,7 @@ interface TopbarProps {
 
 export const Topbar: React.FC<TopbarProps> = ({
   title = "Dashboard",
-  subtitle = "Tuesday, 13 October · all workspaces",
+  subtitle = "All workspaces",
 }) => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");

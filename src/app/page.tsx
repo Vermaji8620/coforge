@@ -16,14 +16,35 @@ import { TrendingUp, AlertCircle, ArrowUpRight, Clock } from "lucide-react";
 export default function DashboardPage() {
   const [pipelineData, setPipelineData] = useState<any>(null);
   const [recentDocs, setRecentDocs] = useState<IDocument[]>([]);
+  const [complianceIssues, setComplianceIssues] = useState<any[]>([]);
+  const [complianceCounts, setComplianceCounts] = useState({
+    total: 0,
+    critical: 0,
+    high: 0,
+    medium: 0,
+  });
+  const [accuracyStats, setAccuracyStats] = useState({
+    avgConfidence: 98.6,
+    reviewPercentage: 2.1,
+  });
+  const [currentDateFormatted, setCurrentDateFormatted] = useState("all workspaces");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Format live current date for header
+    const formattedDate = new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+    setCurrentDateFormatted(`${formattedDate} · all workspaces`);
+
     async function fetchData() {
       try {
-        const [statsRes, docsRes] = await Promise.all([
+        const [statsRes, docsRes, complianceRes] = await Promise.all([
           fetch("/api/pipeline/status"),
           fetch("/api/documents"),
+          fetch("/api/compliance"),
         ]);
 
         if (statsRes.ok) {
@@ -33,7 +54,57 @@ export default function DashboardPage() {
 
         if (docsRes.ok) {
           const docs = await docsRes.json();
-          setRecentDocs(docs.documents?.slice(0, 5) || []);
+          const docList = docs.documents || [];
+          setRecentDocs(docList.slice(0, 5));
+
+          if (docList.length > 0) {
+            const sumConfidence = docList.reduce(
+              (acc: number, d: any) =>
+                acc + (typeof d.confidence === "number" ? d.confidence : 95.0),
+              0
+            );
+            const avgConf = Number((sumConfidence / docList.length).toFixed(1));
+
+            const needReviewCount = docList.filter(
+              (d: any) => d.status === "Needs review" || d.status === "Flagged"
+            ).length;
+            const revPct = Number(((needReviewCount / docList.length) * 100).toFixed(1));
+
+            setAccuracyStats({
+              avgConfidence: avgConf,
+              reviewPercentage: revPct,
+            });
+          }
+        }
+
+        // Real-time compliance issues sync with local human overrides
+        let localOverrides: string[] = [];
+        try {
+          const raw = localStorage.getItem("cf_overridden_issues");
+          if (raw) localOverrides = JSON.parse(raw);
+        } catch (e) {}
+
+        if (complianceRes.ok) {
+          const compData = await complianceRes.json();
+          const allIssues = compData.issues || [];
+
+          const openIssues = allIssues.filter(
+            (issue: any) =>
+              issue.status === "Open" && !localOverrides.includes(issue._id)
+          );
+
+          setComplianceIssues(openIssues);
+
+          const critical = openIssues.filter((i: any) => i.riskLevel === "Critical").length;
+          const high = openIssues.filter((i: any) => i.riskLevel === "High").length;
+          const medium = openIssues.filter((i: any) => i.riskLevel === "Medium").length;
+
+          setComplianceCounts({
+            total: openIssues.length,
+            critical,
+            high,
+            medium,
+          });
         }
       } catch (err) {
         console.error("Dashboard loading error:", err);
@@ -47,10 +118,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Global Topbar */}
+      {/* Global Topbar with Live Formatted Date */}
       <Topbar
         title="Dashboard"
-        subtitle="Tuesday, 13 October · all workspaces"
+        subtitle={currentDateFormatted}
       />
 
       {/* KPI Stats Grid */}
@@ -62,12 +133,12 @@ export default function DashboardPage() {
           </p>
           <div className="my-2">
             <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              {pipelineData?.documentsProcessedToday?.toLocaleString() || "12,480"}
+              {pipelineData?.documentsProcessedToday ?? recentDocs.length}
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>8.2% vs. yesterday</span>
+            <span>Live database count</span>
           </div>
         </div>
 
@@ -76,11 +147,11 @@ export default function DashboardPage() {
           <p className="text-xs text-slate-500 font-medium">In queue</p>
           <div className="my-2">
             <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              {pipelineData?.documentsInQueue || "342"}
+              {pipelineData?.documentsInQueue ?? 0}
             </span>
           </div>
           <div className="text-xs text-slate-500 font-medium">
-            Median wait <span className="font-semibold text-slate-700">41 s</span>
+            Median wait <span className="font-semibold text-slate-700">{pipelineData?.medianWaitTimeSeconds ?? 0} s</span>
           </div>
         </div>
 
@@ -91,11 +162,11 @@ export default function DashboardPage() {
           </p>
           <div className="my-2">
             <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              98.6%
+              {accuracyStats.avgConfidence}%
             </span>
           </div>
           <div className="text-xs text-slate-500 font-medium">
-            <span className="font-semibold text-slate-700">2.1%</span> routed to human review
+            <span className="font-semibold text-slate-700">{accuracyStats.reviewPercentage}%</span> routed to human review
           </div>
         </div>
 
@@ -106,15 +177,15 @@ export default function DashboardPage() {
           </p>
           <div className="my-2">
             <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              {pipelineData?.openComplianceAlerts || "17"}
+              {complianceCounts.total}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[11px] font-bold">
-              4 critical
+              {complianceCounts.critical} critical
             </span>
             <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[11px] font-bold">
-              6 high
+              {complianceCounts.high} high
             </span>
           </div>
         </div>
@@ -134,7 +205,12 @@ export default function DashboardPage() {
         <div className="lg:col-span-5 bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-slate-900 text-sm">Alerts</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-slate-900 text-sm">Alerts</h3>
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
+                  {complianceCounts.total}
+                </span>
+              </div>
               <Link
                 href="/compliance"
                 className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
@@ -145,86 +221,59 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-3">
-              {/* Alert 1 */}
-              <Link
-                href="/documents/northwind"
-                className="block p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-200 transition-all"
-              >
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-bold text-[10px]">
-                      Critical
-                    </span>
-                    <span className="font-bold text-slate-800">
-                      Unlimited liability clause
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-slate-400">4 min</span>
+              {complianceIssues.length === 0 ? (
+                <div className="p-4 rounded-xl border border-dashed border-emerald-200 bg-emerald-50/40 text-center">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block mb-1.5" />
+                  <p className="text-xs font-semibold text-emerald-800">
+                    All compliance alerts resolved
+                  </p>
+                  <p className="text-[11px] text-emerald-600 mt-0.5">
+                    No active policy violations in the queue
+                  </p>
                 </div>
-                <p className="text-[11px] text-slate-500">
-                  MSA – Northwind Logistics · Comply agent
-                </p>
-              </Link>
+              ) : (
+                complianceIssues.slice(0, 4).map((issue: any) => {
+                  const isCritical = issue.riskLevel === "Critical";
+                  const isHigh = issue.riskLevel === "High";
 
-              {/* Alert 2 */}
-              <Link
-                href="/compliance"
-                className="block p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-200 transition-all"
-              >
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-bold text-[10px]">
-                      Critical
-                    </span>
-                    <span className="font-bold text-slate-800">
-                      Unredacted PAN detected
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-slate-400">11 min</span>
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  Invoice INV-20931 · Extract agent
-                </p>
-              </Link>
+                  const badgeClass = isCritical
+                    ? "bg-rose-100 text-rose-700"
+                    : isHigh
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-yellow-100 text-yellow-800";
 
-              {/* Alert 3 */}
-              <Link
-                href="/compliance"
-                className="block p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-200 transition-all"
-              >
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[10px]">
-                      High
-                    </span>
-                    <span className="font-bold text-slate-800">
-                      Auto-renewal without notice period
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-slate-400">26 min</span>
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  SaaS order form – Brightline · Comply agent
-                </p>
-              </Link>
+                  const linkTarget = issue.documentId
+                    ? `/documents/${encodeURIComponent(issue.documentId)}`
+                    : `/compliance`;
 
-              {/* Alert 4 */}
-              <div className="p-3 rounded-xl border border-slate-100 bg-slate-50/50">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-800 font-bold text-[10px]">
-                      Medium
-                    </span>
-                    <span className="font-bold text-slate-800">
-                      Low OCR confidence on 38 pages
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-slate-400">1 h</span>
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  Batch scan-1013-B · OCR agent
-                </p>
-              </div>
+                  return (
+                    <Link
+                      key={issue._id || issue.title}
+                      href={linkTarget}
+                      className="block p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-200 transition-all"
+                    >
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className={`px-1.5 py-0.5 rounded font-bold text-[10px] shrink-0 ${badgeClass}`}
+                          >
+                            {issue.riskLevel}
+                          </span>
+                          <span className="font-bold text-slate-800 truncate">
+                            {issue.title}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-400 shrink-0 ml-2">
+                          {issue.elapsedTime || "Live"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 truncate">
+                        {issue.documentTitle || "Commercial Agreement"} · {issue.assignedTo || "Comply agent"}
+                      </p>
+                    </Link>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -276,7 +325,7 @@ export default function DashboardPage() {
                     </td>
                     <td className="py-3.5 pr-4 text-slate-500">{doc.docType}</td>
                     <td className="py-3.5 pr-4 font-medium text-slate-700">
-                      {doc.confidence.toFixed(1)}%
+                      {typeof doc.confidence === "number" ? doc.confidence.toFixed(1) : "96.8"}%
                     </td>
                     <td className="py-3.5 pr-4">
                       <span

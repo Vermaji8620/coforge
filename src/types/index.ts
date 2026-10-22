@@ -97,6 +97,9 @@ export interface IPipelineAgentStat {
   activeCount: number;
   queuedCount: number;
   latencyP50: string;
+  documentId?: string;
+  documentTitle?: string;
+  documentFilename?: string;
 }
 
 export interface ILiveAgentLog {
