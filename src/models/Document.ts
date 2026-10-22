@@ -47,6 +47,8 @@ export interface IDocModel extends Document {
   workspace: string;
   processedAt: string;
   complianceFlagsCount: number;
+  compliancePolicy?: string;
+  routeLowConfidence?: boolean;
   riskLevel?: string;
   counterparty?: string;
   contractValue?: string;
@@ -82,6 +84,8 @@ const DocumentSchema = new Schema<IDocModel>(
     pages: { type: Number, default: 1 },
     fileSize: { type: String, default: "1.0 MB" },
     workspace: { type: String, default: "Legal · Contracts" },
+    compliancePolicy: { type: String, default: "Commercial contracts v4" },
+    routeLowConfidence: { type: Boolean, default: true },
     processedAt: { type: String, default: "Just now" },
     complianceFlagsCount: { type: Number, default: 0 },
     riskLevel: { type: String, default: "Low" },

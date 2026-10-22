@@ -45,7 +45,100 @@ interface ProcessingItem {
   statusText: string;
   statusClass: string;
   statusCategory: "needs_review" | "processing" | "complete" | "queued";
+  workspace?: string;
+  compliancePolicy?: string;
 }
+
+const DEFAULT_ITEMS: ProcessingItem[] = [
+  {
+    id: "p1",
+    docSlug: "northwind",
+    name: "MSA – Northwind Logistics.pdf",
+    meta: "42 pages · 6.1 MB",
+    format: "PDF",
+    ocr: "complete",
+    ocrProgress: 100,
+    classify: "complete",
+    classifyType: "Master services agreement",
+    extract: "complete",
+    extractProgress: 100,
+    comply: "flagged",
+    statusText: "Needs review",
+    statusClass: "text-amber-600",
+    statusCategory: "needs_review",
+    workspace: "Legal · Contracts",
+  },
+  {
+    id: "p2",
+    docSlug: "INV-20944",
+    name: "INV-20944.pdf",
+    meta: "2 pages · 340 KB",
+    format: "PDF",
+    ocr: "complete",
+    ocrProgress: 100,
+    classify: "complete",
+    classifyType: "Invoice",
+    extract: "running",
+    extractProgress: 65,
+    comply: "queued",
+    statusText: "Extracting · 65%",
+    statusClass: "text-slate-700",
+    statusCategory: "processing",
+    workspace: "Finance · Accounts Payable",
+  },
+  {
+    id: "p3",
+    docSlug: "scan_0044.tiff",
+    name: "scan_0044.tiff",
+    meta: "11 pages · 18.4 MB",
+    format: "TIF",
+    ocr: "running",
+    ocrProgress: 45,
+    classify: "queued",
+    extract: "queued",
+    extractProgress: 0,
+    comply: "queued",
+    statusText: "OCR · 45%",
+    statusClass: "text-slate-700",
+    statusCategory: "processing",
+    workspace: "Operations · Procurement",
+  },
+  {
+    id: "p4",
+    docSlug: "NDA - Kestrel Bio",
+    name: "NDA – Kestrel Bio.docx",
+    meta: "6 pages · 88 KB",
+    format: "DOC",
+    ocr: "complete",
+    ocrProgress: 100,
+    classify: "complete",
+    classifyType: "Mutual NDA",
+    extract: "complete",
+    extractProgress: 100,
+    comply: "complete",
+    statusText: "Complete",
+    statusClass: "text-emerald-600",
+    statusCategory: "complete",
+    workspace: "Legal · Contracts",
+  },
+  {
+    id: "p5",
+    docSlug: "Lease amendment 3 - Unit 4B.pdf",
+    name: "Lease amendment 3 – Unit 4B.pdf",
+    meta: "9 pages · 2.2 MB",
+    format: "PDF",
+    ocr: "queued",
+    ocrProgress: 0,
+    classify: "queued",
+    extract: "queued",
+    extractProgress: 0,
+    comply: "queued",
+    statusText: "Queued",
+    statusClass: "text-slate-400",
+    statusCategory: "queued",
+    workspace: "Operations · Procurement",
+  },
+];
 
 interface CloudFile {
   id: string;
@@ -106,7 +199,7 @@ const CLOUD_FILES: CloudFile[] = [
 ];
 
 export default function UploadPage() {
-  const [workspace, setWorkspace] = useState("Legal · Contracts");
+  const [workspace, setWorkspace] = useState("Operations · Procurement");
   const [docType, setDocType] = useState("Auto-detect");
   const [compliancePolicy, setCompliancePolicy] = useState("Commercial contracts v4");
   const [routeLowConfidence, setRouteLowConfidence] = useState(true);
@@ -127,121 +220,169 @@ export default function UploadPage() {
     { time: "14:02:31", agent: "Comply", action: "flagged liability cap missing", color: "text-rose-600" },
   ]);
 
-  const [items, setItems] = useState<ProcessingItem[]>([
-    {
-      id: "p1",
-      docSlug: "northwind",
-      name: "MSA – Northwind Logistics.pdf",
-      meta: "42 pages · 6.1 MB",
-      format: "PDF",
-      ocr: "complete",
-      ocrProgress: 100,
-      classify: "complete",
-      classifyType: "Master services agreement",
-      extract: "complete",
-      extractProgress: 100,
-      comply: "flagged",
-      statusText: "Needs review",
-      statusClass: "text-amber-600",
-      statusCategory: "needs_review",
-    },
-    {
-      id: "p2",
-      docSlug: "INV-20944",
-      name: "INV-20944.pdf",
-      meta: "2 pages · 340 KB",
-      format: "PDF",
-      ocr: "complete",
-      ocrProgress: 100,
-      classify: "complete",
-      classifyType: "Invoice",
-      extract: "running",
-      extractProgress: 65,
-      comply: "queued",
-      statusText: "Extracting · 65%",
-      statusClass: "text-slate-700",
-      statusCategory: "processing",
-    },
-    {
-      id: "p3",
-      docSlug: "scan_0044.tiff",
-      name: "scan_0044.tiff",
-      meta: "11 pages · 18.4 MB",
-      format: "TIF",
-      ocr: "running",
-      ocrProgress: 45,
-      classify: "queued",
-      extract: "queued",
-      extractProgress: 0,
-      comply: "queued",
-      statusText: "OCR · 45%",
-      statusClass: "text-slate-700",
-      statusCategory: "processing",
-    },
-    {
-      id: "p4",
-      docSlug: "NDA - Kestrel Bio",
-      name: "NDA – Kestrel Bio.docx",
-      meta: "6 pages · 88 KB",
-      format: "DOC",
-      ocr: "complete",
-      ocrProgress: 100,
-      classify: "complete",
-      classifyType: "Mutual NDA",
-      extract: "complete",
-      extractProgress: 100,
-      comply: "complete",
-      statusText: "Complete",
-      statusClass: "text-emerald-600",
-      statusCategory: "complete",
-    },
-    {
-      id: "p5",
-      docSlug: "Lease amendment 3 - Unit 4B.pdf",
-      name: "Lease amendment 3 – Unit 4B.pdf",
-      meta: "9 pages · 2.2 MB",
-      format: "PDF",
-      ocr: "queued",
-      ocrProgress: 0,
-      classify: "queued",
-      extract: "queued",
-      extractProgress: 0,
-      comply: "queued",
-      statusText: "Queued",
-      statusClass: "text-slate-400",
-      statusCategory: "queued",
-    },
-  ]);
+  const [items, setItems] = useState<ProcessingItem[]>(DEFAULT_ITEMS);
 
-  // Synchronize document IDs from MongoDB or sampleData on initial mount
+  // Restore saved ingestion settings from localStorage
   useEffect(() => {
-    async function syncDocumentIds() {
+    if (typeof window !== "undefined") {
+      const savedWs = localStorage.getItem("cf_upload_workspace");
+      if (savedWs) setWorkspace(savedWs);
+      const savedDt = localStorage.getItem("cf_upload_doctype");
+      if (savedDt) setDocType(savedDt);
+      const savedCp = localStorage.getItem("cf_upload_policy");
+      if (savedCp) setCompliancePolicy(savedCp);
+      const savedRlc = localStorage.getItem("cf_upload_route_low");
+      if (savedRlc !== null) setRouteLowConfidence(savedRlc === "true");
+    }
+  }, []);
+
+  const handleWorkspaceChange = (val: string) => {
+    setWorkspace(val);
+    try {
+      localStorage.setItem("cf_upload_workspace", val);
+    } catch (e) {}
+  };
+
+  const handleDocTypeChange = (val: string) => {
+    setDocType(val);
+    try {
+      localStorage.setItem("cf_upload_doctype", val);
+    } catch (e) {}
+  };
+
+  const handlePolicyChange = (val: string) => {
+    setCompliancePolicy(val);
+    try {
+      localStorage.setItem("cf_upload_policy", val);
+    } catch (e) {}
+  };
+
+  const handleRouteLowChange = (checked: boolean) => {
+    setRouteLowConfidence(checked);
+    try {
+      localStorage.setItem("cf_upload_route_low", String(checked));
+    } catch (e) {}
+  };
+
+  // Synchronize document IDs from MongoDB and restore user-uploaded documents across refreshes
+  useEffect(() => {
+    async function loadAllDocuments() {
+      // 1. Read locally cached uploads immediately
+      let localUploads: ProcessingItem[] = [];
+      try {
+        const raw = localStorage.getItem("cf_uploaded_items");
+        if (raw) {
+          localUploads = JSON.parse(raw);
+        }
+      } catch (e) {
+        console.error("Local storage read error:", e);
+      }
+
       try {
         const res = await fetch("/api/documents");
         if (res.ok) {
           const data = await res.json();
-          if (data.documents && data.documents.length > 0) {
-            setItems((prev) =>
-              prev.map((item) => {
-                const match = data.documents.find(
-                  (d: any) =>
-                    d.filename?.toLowerCase() === item.name.toLowerCase() ||
-                    d.title?.toLowerCase() === item.name.replace(/\.[^/.]+$/, "").toLowerCase() ||
-                    (item.docSlug && (
-                      d.title?.toLowerCase().includes(item.docSlug.toLowerCase()) ||
-                      d.filename?.toLowerCase().includes(item.docSlug.toLowerCase())
-                    ))
-                );
-                return match ? { ...item, docId: match._id } : item;
-              })
+          const dbDocs: any[] = data.documents || [];
+
+          // Map known default items to their MongoDB _id
+          const defaultSlugs = ["northwind", "inv-20944", "scan_0044", "kestrel", "lease amendment"];
+          
+          const syncedDefaults = DEFAULT_ITEMS.map((item) => {
+            const match = dbDocs.find(
+              (d: any) =>
+                d.filename?.toLowerCase() === item.name.toLowerCase() ||
+                d.title?.toLowerCase() === item.name.replace(/\.[^/.]+$/, "").toLowerCase() ||
+                (item.docSlug && (
+                  d.title?.toLowerCase().includes(item.docSlug.toLowerCase()) ||
+                  d.filename?.toLowerCase().includes(item.docSlug.toLowerCase())
+                ))
             );
-          }
+            return match ? { ...item, docId: match._id, docSlug: match._id } : item;
+          });
+
+          // Detect any user-uploaded documents from DB that are not the sample 5
+          const userUploadedFromDb: ProcessingItem[] = [];
+
+          dbDocs.forEach((d: any) => {
+            const isDefaultDoc = defaultSlugs.some(
+              (slug) =>
+                d.filename?.toLowerCase().includes(slug) ||
+                d.title?.toLowerCase().includes(slug)
+            );
+
+            if (!isDefaultDoc) {
+              const cached = localUploads.find(
+                (u) => u.docId === d._id || u.name.toLowerCase() === d.filename?.toLowerCase()
+              );
+
+              if (cached) {
+                userUploadedFromDb.push({
+                  ...cached,
+                  docId: d._id,
+                  docSlug: d._id,
+                  workspace: d.workspace || cached.workspace,
+                });
+              } else {
+                const isFlagged =
+                  d.status === "Needs review" ||
+                  d.status === "Flagged" ||
+                  (d.complianceFlagsCount && d.complianceFlagsCount > 0);
+
+                userUploadedFromDb.push({
+                  id: `p-${d._id}`,
+                  docId: d._id,
+                  docSlug: d._id,
+                  name: d.filename || d.title || "Uploaded Document.pdf",
+                  meta: `${d.pages || 1} pages · ${d.fileSize || "1.4 MB"}`,
+                  format:
+                    d.fileType?.toUpperCase() === "DOCX" || d.fileType?.toUpperCase() === "DOC"
+                      ? "DOC"
+                      : d.fileType?.toUpperCase() === "TIFF" || d.fileType?.toUpperCase() === "TIF"
+                      ? "TIF"
+                      : "PDF",
+                  ocr: "complete",
+                  ocrProgress: 100,
+                  classify: "complete",
+                  classifyType: d.docType || "Master services agreement",
+                  extract: "complete",
+                  extractProgress: 100,
+                  comply: isFlagged ? "flagged" : "complete",
+                  statusText: isFlagged ? "Needs review" : "Complete",
+                  statusClass: isFlagged ? "text-amber-600" : "text-emerald-600",
+                  statusCategory: isFlagged ? "needs_review" : "complete",
+                  workspace: d.workspace || "Operations · Procurement",
+                  compliancePolicy: d.compliancePolicy || "Commercial contracts v4",
+                });
+              }
+            }
+          });
+
+          // Prefer DB documents if available, fallback to local uploads
+          const mergedUploads = userUploadedFromDb.length > 0 ? userUploadedFromDb : localUploads;
+
+          // Deduplicate by docId or name
+          const seen = new Set<string>();
+          const dedupedUploads = mergedUploads.filter((item) => {
+            const key = item.docId || item.name;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+
+          setItems([...dedupedUploads, ...syncedDefaults]);
+          return;
         }
       } catch (err) {
-        console.error("Failed to sync documents list:", err);
+        console.error("Failed to load documents list from DB:", err);
+      }
+
+      // Fallback if network or DB error
+      if (localUploads.length > 0) {
+        setItems([...localUploads, ...DEFAULT_ITEMS]);
       }
     }
-    syncDocumentIds();
+
+    loadAllDocuments();
   }, []);
 
   // Live Multi-Agent Pipeline Simulator Loop
@@ -412,31 +553,52 @@ export default function UploadPage() {
           workspace,
           docType,
           compliancePolicy,
+          routeLowConfidence,
         }),
       });
 
       const data = await res.json();
       const docRecord = data.document || {};
 
+      const isFlagged = routeLowConfidence;
       const newItem: ProcessingItem = {
-        id: `p-${Date.now()}`,
+        id: `p-${docRecord._id || Date.now()}`,
         docId: docRecord._id,
         docSlug: docRecord._id || newFile.name,
         name: newFile.name,
         meta: `${docRecord.pages || 14} pages · ${(newFile.size / (1024 * 1024)).toFixed(1)} MB`,
-        format: newFile.name.endsWith("docx") ? "DOC" : newFile.name.endsWith("tiff") || newFile.name.endsWith("tif") ? "TIF" : "PDF",
-        ocr: "running",
-        ocrProgress: 35,
-        classify: "queued",
-        extract: "queued",
-        extractProgress: 0,
-        comply: "queued",
-        statusText: "OCR · 35%",
-        statusClass: "text-indigo-600",
-        statusCategory: "processing",
+        format: newFile.name.endsWith("docx")
+          ? "DOC"
+          : newFile.name.endsWith("tiff") || newFile.name.endsWith("tif")
+          ? "TIF"
+          : "PDF",
+        ocr: "complete",
+        ocrProgress: 100,
+        classify: "complete",
+        classifyType: docType && docType !== "Auto-detect" ? docType : "Master services agreement",
+        extract: "complete",
+        extractProgress: 100,
+        comply: isFlagged ? "flagged" : "complete",
+        statusText: isFlagged ? "Needs review" : "Complete",
+        statusClass: isFlagged ? "text-amber-600" : "text-emerald-600",
+        statusCategory: isFlagged ? "needs_review" : "complete",
+        workspace,
+        compliancePolicy,
       };
 
-      setItems((prev) => [newItem, ...prev]);
+      setItems((prev) => [newItem, ...prev.filter((x) => x.name !== newItem.name)]);
+
+      // Cache locally to withstand immediate browser page reload (F5)
+      try {
+        const stored = JSON.parse(localStorage.getItem("cf_uploaded_items") || "[]");
+        localStorage.setItem(
+          "cf_uploaded_items",
+          JSON.stringify([newItem, ...stored.filter((x: any) => x.name !== newItem.name)])
+        );
+      } catch (err) {
+        console.error("Local storage write error:", err);
+      }
+
       setAgentLogs((prev) => [
         {
           time: new Date().toLocaleTimeString("en-GB", { hour12: false }),
@@ -444,13 +606,22 @@ export default function UploadPage() {
           action: `ingested ${newFile.name} into ${workspace} queue`,
           color: "text-indigo-600",
         },
-        ...prev.slice(0, 7),
+        {
+          time: new Date().toLocaleTimeString("en-GB", { hour12: false }),
+          agent: "Comply",
+          action: isFlagged
+            ? `routed low-confidence fields to human review per policy (${compliancePolicy})`
+            : `all clauses compliant with ${compliancePolicy}`,
+          color: isFlagged ? "text-amber-600" : "text-emerald-600",
+        },
+        ...prev.slice(0, 6),
       ]);
-      setBatchProgress((p) => Math.max(20, Math.min(95, p - 10)));
+      setBatchProgress((p) => Math.max(20, Math.min(95, p - 5)));
     } catch (err) {
       console.error("Upload error:", err);
     } finally {
       setIsUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -465,18 +636,27 @@ export default function UploadPage() {
       name: cf.name,
       meta: `${cf.pages} pages · ${cf.size}`,
       format: cf.format,
-      ocr: "running",
-      ocrProgress: 30 + idx * 10,
-      classify: "queued",
-      extract: "queued",
-      extractProgress: 0,
-      comply: "queued",
-      statusText: `OCR · ${30 + idx * 10}%`,
-      statusClass: "text-indigo-600",
-      statusCategory: "processing",
+      ocr: "complete",
+      ocrProgress: 100,
+      classify: "complete",
+      classifyType: docType && docType !== "Auto-detect" ? docType : "Cloud Import",
+      extract: "complete",
+      extractProgress: 100,
+      comply: "complete",
+      statusText: "Complete",
+      statusClass: "text-emerald-600",
+      statusCategory: "complete",
+      workspace,
+      compliancePolicy,
     }));
 
     setItems((prev) => [...newItems, ...prev]);
+
+    try {
+      const stored = JSON.parse(localStorage.getItem("cf_uploaded_items") || "[]");
+      localStorage.setItem("cf_uploaded_items", JSON.stringify([...newItems, ...stored]));
+    } catch (err) {}
+
     setAgentLogs((prev) => [
       {
         time: new Date().toLocaleTimeString("en-GB", { hour12: false }),
@@ -588,12 +768,12 @@ export default function UploadPage() {
               </label>
               <select
                 value={workspace}
-                onChange={(e) => setWorkspace(e.target.value)}
+                onChange={(e) => handleWorkspaceChange(e.target.value)}
                 className="w-full text-xs py-2 px-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
               >
+                <option>Operations · Procurement</option>
                 <option>Legal · Contracts</option>
                 <option>Finance · Accounts Payable</option>
-                <option>Operations · Procurement</option>
                 <option>Human Resources · Compliance</option>
               </select>
             </div>
@@ -604,7 +784,7 @@ export default function UploadPage() {
               </label>
               <select
                 value={docType}
-                onChange={(e) => setDocType(e.target.value)}
+                onChange={(e) => handleDocTypeChange(e.target.value)}
                 className="w-full text-xs py-2 px-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
               >
                 <option>Auto-detect</option>
@@ -622,7 +802,7 @@ export default function UploadPage() {
               </label>
               <select
                 value={compliancePolicy}
-                onChange={(e) => setCompliancePolicy(e.target.value)}
+                onChange={(e) => handlePolicyChange(e.target.value)}
                 className="w-full text-xs py-2 px-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
               >
                 <option>Commercial contracts v4</option>
@@ -637,8 +817,8 @@ export default function UploadPage() {
                 type="checkbox"
                 id="confidenceRoute"
                 checked={routeLowConfidence}
-                onChange={(e) => setRouteLowConfidence(e.target.checked)}
-                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                onChange={(e) => handleRouteLowChange(e.target.checked)}
+                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
               />
               <label
                 htmlFor="confidenceRoute"
@@ -761,18 +941,30 @@ export default function UploadPage() {
               className="p-4 rounded-xl border border-slate-200/80 hover:border-indigo-300 hover:shadow-xs transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4"
             >
               {/* Document Identity */}
-              <div className="flex items-center gap-3.5 min-w-0 lg:min-w-[240px]">
+              <div className="flex items-center gap-3.5 min-w-0 lg:min-w-[260px]">
                 <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200">
                   {item.format}
                 </div>
                 <div className="min-w-0">
                   <Link
-                    href={`/documents/${encodeURIComponent(item.docSlug || item.name)}`}
+                    href={`/documents/${encodeURIComponent(item.docId || item.docSlug || item.name)}`}
                     className="font-bold text-slate-900 text-xs sm:text-sm hover:text-indigo-600 transition-colors truncate block"
                   >
                     {item.name}
                   </Link>
-                  <p className="text-[11px] text-slate-400 mt-0.5">{item.meta}</p>
+                  <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                    <span className="text-[11px] text-slate-400">{item.meta}</span>
+                    {item.workspace && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium">
+                        {item.workspace}
+                      </span>
+                    )}
+                    {item.classifyType && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-medium border border-indigo-100/60">
+                        {item.classifyType}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -900,7 +1092,7 @@ export default function UploadPage() {
                 </span>
 
                 <Link
-                  href={`/documents/${encodeURIComponent(item.docSlug || item.name)}`}
+                  href={`/documents/${encodeURIComponent(item.docId || item.docSlug || item.name)}`}
                   className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
                 >
                   <span>Review</span>

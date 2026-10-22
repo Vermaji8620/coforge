@@ -61,7 +61,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { filename, fileType, workspace, docType, compliancePolicy } = body;
+    const { filename, fileType, workspace, docType, compliancePolicy, routeLowConfidence } = body;
 
     if (!filename) {
       return NextResponse.json({ error: "Filename is required" }, { status: 400 });
@@ -72,47 +72,65 @@ export async function POST(req: Request) {
     const title = filename.replace(/\.[^/.]+$/, "");
     const ext = filename.split(".").pop()?.toLowerCase() || fileType || "pdf";
 
+    // If routeLowConfidence is enabled, flag a low-confidence field (<90%) for human review
+    const shouldRouteToReview = routeLowConfidence !== false; // defaults to true if not specified
+    const primaryConfidence = shouldRouteToReview ? 88.5 : 97.4;
+    const initialStatus = shouldRouteToReview ? "Needs review" : "Processing";
+
+    const extractedFields = [
+      { id: "ef1", index: 1, label: "Effective date", value: "1 Jan 2026", confidence: 99.1, highlightRef: "1", needsReview: false },
+      { id: "ef2", index: 2, label: "Provider", value: "Global Enterprise Partner", confidence: 98.4, highlightRef: "2", needsReview: false },
+      { id: "ef3", index: 3, label: "Customer", value: "Halcyon Retail Group", confidence: 98.9, highlightRef: "–", needsReview: false },
+      { 
+        id: "ef4", 
+        index: 4, 
+        label: "Annual fee", 
+        value: "USD 125,000", 
+        confidence: shouldRouteToReview ? 86.4 : 97.5, 
+        highlightRef: "3", 
+        needsReview: shouldRouteToReview 
+      },
+      { id: "ef5", index: 5, label: "Payment terms", value: "Net 30", confidence: 96.0, highlightRef: "4", needsReview: false },
+      { id: "ef6", index: 6, label: "Governing law", value: "Delaware, USA", confidence: 99.2, highlightRef: "5", needsReview: false },
+    ];
+
     const newDoc = await DocumentModel.create({
       title,
       filename,
       fileType: ext,
       docType: docType && docType !== "Auto-detect" ? docType : "Master services agreement",
-      confidence: 96.8,
-      status: "Processing",
+      confidence: primaryConfidence,
+      status: initialStatus,
       pages: Math.floor(Math.random() * 20) + 1,
       fileSize: `${(Math.random() * 5 + 0.5).toFixed(1)} MB`,
       workspace: workspace || "Legal · Contracts",
+      compliancePolicy: compliancePolicy || "Commercial contracts v4",
+      routeLowConfidence: shouldRouteToReview,
       processedAt: "Just now",
-      complianceFlagsCount: 0,
-      riskLevel: "Low",
+      complianceFlagsCount: shouldRouteToReview ? 1 : 0,
+      riskLevel: shouldRouteToReview ? "Medium" : "Low",
       counterparty: "Global Enterprise Partner",
       contractValue: "$125,000",
       renewalDate: "15 Dec 2027",
       noticePeriod: "30 days",
-      extractedFields: [
-        { id: "ef1", index: 1, label: "Effective date", value: "1 Jan 2026", confidence: 99.1, highlightRef: "1" },
-        { id: "ef2", index: 2, label: "Provider", value: "Global Enterprise Partner", confidence: 98.4, highlightRef: "2" },
-        { id: "ef3", index: 3, label: "Customer", value: "Halcyon Retail Group", confidence: 98.9, highlightRef: "–" },
-        { id: "ef4", index: 4, label: "Annual fee", value: "USD 125,000", confidence: 97.5, highlightRef: "3" },
-        { id: "ef5", index: 5, label: "Payment terms", value: "Net 30", confidence: 96.0, highlightRef: "4" },
-        { id: "ef6", index: 6, label: "Governing law", value: "Delaware, USA", confidence: 99.2, highlightRef: "5" },
-      ],
+      extractedFields,
       clauses: [
         {
           id: "c-new-1",
           title: "Limitation of liability · Standard",
           section: "§14",
-          riskLevel: "Within policy",
-          confidence: 97.4,
-          description: "Liability capped at 12 months fees as mandated by Commercial contracts v4.",
+          riskLevel: shouldRouteToReview ? "Medium" : "Within policy",
+          confidence: shouldRouteToReview ? 87.0 : 97.4,
+          description: `Liability capped at 12 months fees as evaluated against ${compliancePolicy || "Commercial contracts v4"}.`,
         },
       ],
       pipelineStages: {
         ocr: "complete",
         classify: "complete",
-        extract: "running",
-        comply: "queued",
-        extractProgress: 45,
+        extract: "complete",
+        comply: shouldRouteToReview ? "flagged" : "complete",
+        ocrProgress: 100,
+        extractProgress: 100,
       },
     });
 
